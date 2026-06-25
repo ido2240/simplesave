@@ -115,3 +115,46 @@ rules), `test_tuning` (lands in range; inputs not mutated; validation).
 ### Verification (all green)
 `pytest` 26 passed (incl. 2 parity tests vs the Node oracle) · `ruff check .`
 clean · `mypy src` (strict) clean.
+
+---
+
+## Step 3 — Calculation API endpoint (2026-06-25)
+
+### What was built
+Exposed the calculation engine over HTTP via `POST /calculate`. The engine
+package was **not** touched — the API layer only translates between JSON and
+engine types.
+
+### Files created
+| File | Purpose |
+|------|----------|
+| `src/simplesave/api/schemas.py` | Pydantic v2 request/response models + `to_engine` / `from_engine` translation |
+| `src/simplesave/api/calculate.py` | `APIRouter` with `POST /calculate` |
+| `tests/api/test_calculate.py` | TestClient tests |
+
+### Files modified
+- `src/simplesave/api/main.py` — `app.include_router(calculate_router)`.
+
+### Endpoint
+`POST /calculate` accepts `{ routes: [...], params: {cpi,usd,eur} }` and returns
+`{ routes: [...per-route totals...], mix: {...}, risk: {...} }`.
+- **Request:** `RouteInput` mirrors the engine `Route` (snake_case; `amount`,
+  `years`, `anchor` required, rest default to the dataclass values); enum fields
+  validate against the engine `StrEnum`s (Hebrew values). `routes` constrained to
+  1–10 (CLAUDE.md §3). `params` defaults to the standard expectations.
+- **Response (summaries, not the 360-row schedules):** per route `first_pay`,
+  `total`, `interest` (Σ intr), `indexation` (Σ idx_eff), `months`, `annual_rate`,
+  `eff_rate`; mix `first_pay`, `total`, `interest`, `indexation`, `principal`,
+  `exit_fee`, `total_amount`, `avg_rate`, `avg_years`, `max_n`; risk `score`,
+  `level`, `label` from `mix_risk`.
+- Internally calls `calc_mix` once (per-route results come from `mix.per`) plus
+  `mix_risk`. No business logic in the API layer.
+
+### Scope
+No OPEN decision touched — the endpoint computes a user-supplied mix; it does
+not use the clock templates (D-2), payment-to-income (D-3), or max age (D-4/D-5).
+
+### Verification (all green)
+`pytest` 34 passed (8 new API tests; the core one asserts the HTTP response
+matches `calc_mix`/`mix_risk` called directly) · `ruff check .` clean ·
+`mypy src` (strict) clean · live `POST /calculate` returns the expected JSON.

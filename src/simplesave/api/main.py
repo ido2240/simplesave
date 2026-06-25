@@ -7,7 +7,11 @@ Run locally with::
 
 from fastapi import FastAPI
 
+from simplesave.api.calculate import router as calculate_router
+
 app = FastAPI(title="SimpleSave API")
+
+app.include_router(calculate_router)
 
 
 @app.get("/health")
