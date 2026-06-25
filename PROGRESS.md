@@ -63,3 +63,55 @@ alembic/           # migration env wired to settings + Base.metadata; no revisio
 ### Known gaps (blocked until user provides values)
 - `.env` keys are empty — a dedicated SimpleSave Supabase project must be created and credentials filled in before any DB/auth work (CLAUDE.md §2).
 - The 5 business decisions D-1…D-5 remain OPEN (see DECISIONS.md).
+
+---
+
+## Step 2 — Calculation engine port (2026-06-25)
+
+### What was built
+Ported the validated mortgage math from the reference simulator
+(`reference/סימולטור_משכנתא.html`) to a pure-Python package `src/simplesave/engine/`.
+Only the math was ported — no UI, no Chart.js, no global `state` coupling
+(CLAUDE.md §3). The engine imports stdlib only (`math`, `copy`, `dataclasses`,
+`enum`, `functools`); no I/O, DB, or framework.
+
+### Engine modules (`src/simplesave/engine/`)
+| File | Contents |
+|------|----------|
+| `types.py` | `Route`, `MarketParams`, `PurposeSplit`, result dataclasses; `StrEnum`s (`Board`, `Balloon`, `IndexType`, `AnchorType`, `RateType`, `RouteKind`) whose members are English-named but carry the **exact Hebrew values** from the reference. |
+| `core.py` | `num`, `pmt`, `js_round` (JS `Math.round` semantics), `index_expect`, `route_annual_index`, `displayed_annual_index`, `monthly_rate`. |
+| `route.py` | `calc_route` — Spitzer / equal-principal, monthly index linkage (`annual/12`, the linear approximation), balloon & grace, housing/any-purpose split. |
+| `mix.py` | `calc_mix` — aggregate routes (first payment, total, interest, indexation). |
+| `risk.py` | `default_risk_rules`, `risk_rule_for_route`, `mix_risk` — weighted risk score. |
+| `tuning.py` | `infer_route_kind`, `apply_route_kind`, `allowed_years`, `candidate_years`, `validate_mix_template`, `shorten_fixed_routes_to_maximum`, `calculate_mix_to_range` (the generic clock tuner — takes routes/loan/range/conditions as args; no clock templates). |
+
+### Parity oracle (CLAUDE.md §3)
+- `tests/oracle/run_oracle.js` extracts the reference JS functions **verbatim**
+  (by name + brace-matching) from the HTML, wraps them in a minimal `state`
+  shim, and runs a battery of cases via Node.
+- `tests/oracle/battery.py` generates a deterministic, seeded battery (140
+  cases: 70 single-route, 25 mix, 25 risk, 20 tune) covering every route kind,
+  board, balloon/grace variant, and index type.
+- `tests/engine/test_parity.py` feeds the identical battery to both the Node
+  oracle and the Python engine and asserts every number matches (rel/abs tol
+  1e-9). Auto-skips if Node is absent (Node v25 is present, so it runs).
+
+### Unit tests (known values) — `tests/engine/`
+`test_pmt` (Excel parity), `test_calc_route` (1M/20yr Spitzer → first payment
+6599.56 and ~0 closing balance; equal-principal; index linkage; grace),
+`test_calc_mix` (aggregation invariants), `test_mix_risk` (against default
+rules), `test_tuning` (lands in range; inputs not mutated; validation).
+
+### Decisions / notes
+- **Hebrew enum values kept verbatim** via `StrEnum` (English member names, Hebrew
+  values) — zero divergence risk from the frozen reference data.
+- **`calculate_mix_to_range` is decoupled from the clocks** — it is a generic
+  tuner; the 5 clock templates (OPEN decision D-2) are NOT defined here. No OPEN
+  decision (clocks, payment-to-income, max age) was touched.
+- The reference's UI/state-only paths (monthly-index table, rate bands,
+  `useGeneralRate`) were intentionally dropped — faithful to the default
+  annual index mode.
+
+### Verification (all green)
+`pytest` 26 passed (incl. 2 parity tests vs the Node oracle) · `ruff check .`
+clean · `mypy src` (strict) clean.
