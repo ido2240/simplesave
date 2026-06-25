@@ -25,3 +25,11 @@ htmlcov/
 .DS_Store
 .Rhistory
 *.pem
+
+# Next.js / Node
+/node_modules
+/.next
+/out
+next-env.d.ts
+.env.local
+.env*.local

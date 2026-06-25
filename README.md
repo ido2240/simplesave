@@ -38,7 +38,15 @@ cp .env.example .env        # then fill in Supabase credentials
 ```bash
 uvicorn simplesave.api.main:app --reload
 # GET http://127.0.0.1:8000/health -> {"status": "ok"}
+# UI: http://127.0.0.1:8000/ (RTL frontend)
+# API docs: http://127.0.0.1:8000/docs
 ```
+
+### Key API routes
+- `POST /new-mortgage/clocks` — questionnaire → 5 clocks
+- `POST /refinance/clocks` — refinance clocks
+- `POST /insurance/quotes` — insurance stub
+- `POST /auth/login` — get Bearer token for personal area
 
 ## Test / check
 

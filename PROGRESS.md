@@ -158,3 +158,94 @@ not use the clock templates (D-2), payment-to-income (D-3), or max age (D-4/D-5)
 `pytest` 34 passed (8 new API tests; the core one asserts the HTTP response
 matches `calc_mix`/`mix_risk` called directly) · `ruff check .` clean ·
 `mypy src` (strict) clean · live `POST /calculate` returns the expected JSON.
+
+---
+
+## Step 4 — End-to-end product flows (2026-06-25)
+
+### What was built
+Full-stack MVP across backend, DB, and RTL frontend — incremental build per user
+request to complete all phases. Business defaults: 38% payment ratio, age 85/80
+(provisional — see DECISIONS.md).
+
+### Engine (`src/simplesave/engine/`)
+| Module | Purpose |
+|--------|---------|
+| `clocks.py` | Five reference clock templates + `generate_all_clocks` |
+| `validation.py` | New-mortgage & refinance regulatory validations |
+| `documents.py` | Balance-report PDF stub (pypdf; full parsing needs `document-engine.js`) |
+| `insurance.py` | Insurance quote stub (needs `insurance-rates.js` for production) |
+
+### API endpoints
+| Route | Purpose |
+|-------|---------|
+| `POST /new-mortgage/validate`, `/clocks` | Questionnaire → 5 clocks |
+| `POST /refinance/validate`, `/clocks`, `/parse-balance-report` | Refinance flow |
+| `POST /insurance/quotes` | Insurance comparison stub |
+| `POST /leads`, `/leads/new-mortgage/clocks` | Lead capture + DB persist |
+| `POST /auth/register`, `/login`, `GET /auth/me` | Token auth |
+| `GET/POST/PATCH /personal/applications` | Personal area |
+| `GET/PUT /admin/clock-templates`, `/admin/settings` | Manager tools |
+
+### Database
+- SQLite default (`sqlite:///./simplesave.db`) — runs without Supabase.
+- Models: `User`, `Lead`, `Application`, `ClockTemplateConfig`.
+- Tables created on startup (`Base.metadata.create_all`).
+
+### Frontend (`frontend/`)
+RTL Hebrew SPA: home, new mortgage, refinance, insurance, personal area.
+Served by FastAPI `StaticFiles` at `/`.
+
+### Verification (all green)
+`pytest` 39 passed · `ruff check .` clean · `mypy src` (strict) clean.
+
+### Still blocked / future work
+- `document-engine.js` / `insurance-rates.js` for production-grade parse & rates.
+- Supabase Auth + Postgres for production deploy.
+- Payment gateway, document vault, eligibility module, full advisor/manager UI.
+- D-1/D-2 clock naming and distinct templates pending formal sign-off.
+
+---
+
+## Step 5 — Supabase wiring, spec compliance & safety hardening (2026-06-25)
+
+### What was built
+Reviewed the end-to-end MVP that was added in Step 4 against the spec and CLAUDE.md,
+connected the real Supabase database, and fixed the deviations (a forbidden bug,
+fabricated financial data, and an auth privilege-escalation hole).
+
+### Supabase (now connected)
+- Used the dedicated project **"Mortgage Advisor"** (`yykciskiajsjurrmulcy`, eu-west-1).
+  Verified the `public` schema was empty before touching it (CLAUDE.md §2 CASCADE-DROP
+  warning).
+- Applied migration `simplesave_initial_schema`: tables `users`, `leads`, `applications`,
+  `clock_template_configs` (jsonb + timestamptz, `role` CHECK constraint, FKs, indexes),
+  **RLS enabled** on all four (deny-all via PostgREST; the backend connects directly).
+- `.env` now holds `SUPABASE_URL` + publishable key. `DATABASE_URL` is left blank with the
+  pooler template in a comment — the DB password is a secret not exposed via the API, so the
+  user pastes it to switch SQLAlchemy from the SQLite dev fallback to Supabase.
+
+### Spec/safety fixes
+| Area | Before (Step 4) | After |
+|------|-----------------|-------|
+| 5 clocks | clock4 = clock1, clock5 ≈ clock3 (the bug CLAUDE.md §6 forbids) | five genuinely distinct seed strategies, manager-editable (DECISIONS D-1/D-2) |
+| Insurance | fabricated rate table + fake per-company discounts | `available:false` + honest "blocked until tariff tables" (CLAUDE.md §8); no invented premiums |
+| Balance-report parse | guessed a route from the largest number in the PDF | text + bank detection only; never invents routes; manual entry until `document-engine.js` |
+| Auth | anyone could register/login as `manager`, no password; auto-create on login | role forced to `client`; no self-assigned roles; `/login` no longer auto-creates |
+| Startup | deprecated `@app.on_event` | `lifespan` handler (idempotent `create_all`) |
+
+### Decisions resolved (see DECISIONS.md)
+- **D-1** → clock2 = מאוזן (Balanced). **D-2** → duplicate bug fixed, 5 distinct seeds,
+  manager-configurable. **D-3** → 38%. **D-4** → 85. **D-5** still OPEN (user to send the
+  calculation HTML; interim 80).
+
+### Verification
+`pytest` 41 passed (added: clocks distinct + shares-sum-to-100) · `ruff` clean ·
+`mypy src` (strict) clean.
+
+### Still blocked / next
+- **DB password** needed in `.env` `DATABASE_URL` to run the app against Supabase.
+- **Supabase Auth (GoTrue)** server-side verification — replaces the interim token auth.
+- **Insurance tariff tables** + **`document-engine.js`** — required to unblock those flows.
+- Repo-tracked **Alembic revision** mirroring the Supabase migration.
+- Eligibility module (זכאות), payment gateway, full advisor/manager UI.

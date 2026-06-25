@@ -1,0 +1,14 @@
+{
+  "name": "SimpleSave — משכנתא חכמה",
+  "short_name": "SimpleSave",
+  "description": "השוואת תמהילי משכנתא וקבלת החלטות מימון טובות יותר",
+  "lang": "he",
+  "dir": "rtl",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#efe8d7",
+  "theme_color": "#1b1610",
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

@@ -1,0 +1,63 @@
+@import "tailwindcss";
+
+/* ── Design tokens — editorial Hebrew broadsheet (warm newsprint + ink) ── */
+:root {
+  --paper: #efe8d7;
+  --paper-2: #f4eee0;
+  --ink: #1b1610;
+  --ink-2: #4a4032;
+  --ink-3: #8a7c66;
+  --rule: #ccc0a6;
+  --rule-strong: #b5a684;
+  --ember: #cf4d17; /* the one accent — used sparingly */
+  --forest: #2c6049; /* risk: low */
+  --ochre: #a67a24; /* risk: medium */
+  --brick: #a4371e; /* risk: high */
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-ember: var(--ember);
+  --color-forest: var(--forest);
+  --color-ochre: var(--ochre);
+  --color-brick: var(--brick);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1, h2, h3, .display {
+  font-family: var(--font-display), Georgia, serif;
+  letter-spacing: -0.02em;
+}
+
+/* Uppercase hairline labels */
+.lbl {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* Tabular figures for every monetary number */
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Masthead rule at the very top of the page */
+.masthead-rule {
+  height: 5px;
+  background: var(--ink);
+}

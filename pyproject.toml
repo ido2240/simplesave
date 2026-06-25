@@ -15,6 +15,9 @@ dependencies = [
     "pydantic>=2",
     "pydantic-settings",
     "psycopg[binary]",
+    "python-multipart",
+    "pypdf",
+    "email-validator",
 ]
 
 [project.optional-dependencies]
@@ -34,6 +37,7 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]  # FastAPI Depends() in defaults is standard
 
 [tool.mypy]
 python_version = "3.12"
