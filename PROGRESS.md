@@ -249,3 +249,43 @@ fabricated financial data, and an auth privilege-escalation hole).
 - **Insurance tariff tables** + **`document-engine.js`** — required to unblock those flows.
 - Repo-tracked **Alembic revision** mirroring the Supabase migration.
 - Eligibility module (זכאות), payment gateway, full advisor/manager UI.
+
+---
+
+## Step 6 — Port to Next.js + TypeScript + Supabase (2026-06-26)
+
+### What was built
+Rebuilt SimpleSave as a single Next.js 16 + TypeScript app per
+`SimpleSave_NextJS_Prompt.md`. The Python served as the *specification* and was
+removed at the end (after parity was green). See `PORT_PLAN.md`.
+
+- **Engine** (`lib/engine/`): `types/core/route/mix/risk/tuning/clocks/rules` —
+  function-for-function port (Hebrew enum values verbatim, 1-indexed arrays,
+  annual/12 indexation).
+- **Parity gate** (`lib/engine/__tests__/parity.test.ts` + `golden.json`): the
+  Python battery (140 cases) was dumped to golden JSON; the TS engine matches it
+  — **164,491 numbers, max abs diff 1.86e-9**.
+- **Supabase** (`supabase/migrations/0001_init.sql` + `seed.ts`): profiles,
+  requests, request_details, borrowers, documents, authorizations, messages,
+  leads, economic_params, rate_bands, clock_templates. Demo auth = mock cookie
+  session + role switcher (`lib/session.ts`).
+- **API** (`app/api/*`, zod): `/api/calculate`, `/api/new-mortgage/clocks`,
+  `/api/refinance/clocks`, `/api/insurance/quotes`.
+- **UI** (Hebrew RTL, mobile-first): home, about, new-mortgage (questionnaire →
+  5 clocks → detail with amortization chart → choose), personal area,
+  authorizations + documents (paywall-gated), advisor (review + messages),
+  admin (params / templates / leads), checkout (mock).
+
+### Decisions
+- 5 clocks reverted to the **reference templates verbatim** (clock4 == clock1,
+  clock5 ≈ clock3), kept as defaults but **flagged** (`duplicate_of`). Updates D-2.
+- Demo uses mock cookie auth (spec-allowed role switcher) instead of Supabase
+  Auth/RLS; data access is server-only with the anon key. Production swap noted.
+
+### Verification (all green)
+`tsc --noEmit` clean · `npm test` 2/2 (incl. parity) · `npm run lint` clean ·
+`npm run build` 23 routes · live end-to-end on Supabase (client/advisor/admin).
+
+### Removed
+`src/`, `tests/`, `alembic*`, `pyproject.toml`, `frontend/`, Python caches and
+`.venv/`. Kept `reference/` (source simulator) and `golden.json` (frozen parity).

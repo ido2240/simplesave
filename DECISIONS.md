@@ -40,10 +40,16 @@ The spec listed "Short-term" twice (a typo). Clock 2 is now **תמהיל מאו�
 the classic thirds mix (fixed-unlinked / variable-unlinked / prime). Editable by the
 manager.
 
-### D-2: Five-clock definitions — RESOLVED 2026-06-25 (duplicate bug fixed; seeds editable)
-The reference duplicates (clock4 = clock1, clock5 ≈ clock3) are **no longer reproduced**
-(CLAUDE.md §6). The five clocks are now genuinely distinct seed strategies, each mapped to
-a name and risk profile:
+### D-2: Five-clock definitions — UPDATED 2026-06-26 (reference templates verbatim, flagged)
+Per the project owner's directive, the five clocks now use the **reference simulator
+templates verbatim** — including the reference quirk that clock4 == clock1 and
+clock5 ≈ clock3. They are kept as defaults but **flagged** (`duplicate_of` /
+`CLOCK_DUPLICATE_FLAGS`) so the admin UI marks them and the manager can replace them
+after client sign-off. (Supersedes the earlier "distinct seeds" resolution below.)
+
+Earlier (2026-06-25) resolution — superseded:
+The reference duplicates were not reproduced; the five clocks were distinct seed
+strategies, each mapped to a name and risk profile:
 - clock1 **קצר טווח** (low–med) — fixed-unlinked 40 / variable-unlinked 20 / prime 40
 - clock2 **מאוזן** (med) — fixed-unlinked 33 / variable-unlinked 34 / prime 33
 - clock3 **קל"צ** (low–med) — fixed-unlinked 67 / prime 33
