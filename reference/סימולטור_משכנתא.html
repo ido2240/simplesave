@@ -1,0 +1,3308 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>סימולטור תמהילי משכנתא</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="./document-engine.js"></script>
+<script src="./insurance-rates.js"></script>
+<style>
+:root{
+  --bg:#0f1623; --panel:#16203049; --card:#1b2738; --line:#2b3a52; --txt:#e8eef7;
+  --muted:#93a4bd; --accent:#3b82f6; --accent2:#22c55e; --warn:#f59e0b; --bad:#ef4444;
+  --calc:#1f2d22; --calcb:#2e4d35; --inp:#0e1828;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Segoe UI",Arial,sans-serif;background:linear-gradient(160deg,#0b111c,#101a2b);color:var(--txt);font-size:14px}
+header{padding:16px 22px;background:#0c1422;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+header h1{font-size:19px;margin:0;font-weight:700}
+header .sub{color:var(--muted);font-size:12.5px}
+.toolbar{margin-inline-start:auto;display:flex;gap:8px;flex-wrap:wrap}
+button.btn{background:var(--accent);color:#fff;border:0;border-radius:8px;padding:8px 14px;cursor:pointer;font-size:13px;font-weight:600}
+button.btn.alt{background:#28384f}
+button.btn.green{background:var(--accent2)}
+button.btn:hover{filter:brightness(1.08)}
+.tabs{display:flex;gap:4px;padding:10px 18px 0;background:#0c1422;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{padding:9px 16px;cursor:pointer;border:1px solid transparent;border-bottom:0;border-radius:9px 9px 0 0;color:var(--muted);font-weight:600;font-size:13.5px}
+.tab.active{background:var(--bg);color:var(--txt);border-color:var(--line)}
+main{padding:20px 22px 60px;max-width:1500px;margin:0 auto}
+.view{display:none}
+.view.active{display:block}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:18px}
+.panel h2{margin:0 0 4px;font-size:16px}
+.panel .hint{color:var(--muted);font-size:12px;margin:0 0 14px}
+.grid{display:grid;gap:12px}
+.f{display:flex;flex-direction:column;gap:4px}
+.f label{font-size:12px;color:var(--muted)}
+input,select{background:var(--inp);border:1px solid var(--line);color:var(--txt);border-radius:7px;padding:7px 9px;font-size:13px;width:100%;font-family:inherit}
+input:focus,select:focus{outline:0;border-color:var(--accent)}
+input[readonly]{background:var(--calc);border-color:var(--calcb);color:#bfe9c8;cursor:default}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th,td{border:1px solid var(--line);padding:5px 7px;text-align:center;white-space:nowrap}
+th{background:#16243a;color:#cdd9ec;font-weight:600;font-size:11.5px;position:sticky;top:0}
+td input,td select{padding:4px 5px;font-size:12px;min-width:74px}
+.scroll{overflow-x:auto;border:1px solid var(--line);border-radius:10px;max-height:70vh}
+.mix{margin-bottom:22px;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.mix .head{display:flex;align-items:center;gap:12px;padding:11px 15px;background:#14223a;cursor:pointer}
+.mix .head h3{margin:0;font-size:15px}
+.mix .head .chips{margin-inline-start:auto;display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted)}
+.mix .head .chips b{color:var(--txt)}
+.mix .body{padding:12px 14px;display:none}
+.mix.open .body{display:block}
+.calccell{background:var(--calc);color:#bfe9c8}
+.totrow td{background:#13233c;font-weight:700;color:#fff}
+.rowact{display:flex;gap:6px;justify-content:center}
+.iconbtn{background:#28384f;border:0;color:#fff;border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:14px;line-height:1}
+.iconbtn.del{background:#7f2230}
+.iconbtn:disabled{opacity:.28;cursor:not-allowed}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.swatch{width:13px;height:13px;border-radius:3px;display:inline-block}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:13px 15px}
+.kpi .l{font-size:11.5px;color:var(--muted)}
+.kpi .v{font-size:20px;font-weight:700;margin-top:3px}
+.cmp td.metric{text-align:right;color:var(--muted);font-weight:600}
+.chartbox{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px}
+.chartbox h4{margin:0 0 10px;font-size:14px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.note{font-size:11.5px;color:var(--muted);margin-top:8px}
+.pill{font-size:11px;padding:2px 8px;border-radius:20px;background:#22324a;color:#cdd9ec}
+.warnbox{background:#3a2a12;border:1px solid #6b4a1c;color:#f0c987;border-radius:9px;padding:9px 12px;font-size:12.5px;margin-top:10px}
+.calcstatus{padding:8px 11px;border-radius:8px;font-size:12.5px;align-self:center}
+.calcstatus.ok{background:#163a24;color:#bdf0cb;border:1px solid #285d39}
+.calcstatus.bad{background:#3a2020;color:#ffc7c7;border:1px solid #6d3030}
+.modalback{position:fixed;inset:0;background:#060b13cc;z-index:1000;display:none;align-items:center;justify-content:center;padding:20px}
+.modalback.open{display:flex}
+.modalbox{background:#111c2c;border:1px solid var(--line);border-radius:14px;padding:18px;max-width:1200px;width:100%;max-height:90vh;overflow:auto}
+.modalhead{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.modalhead h2{margin:0}
+.modalhead button{margin-inline-start:auto}
+.reportdrop{margin-top:12px;border:2px dashed #41658d;border-radius:12px;padding:18px;text-align:center;background:#101d2e;color:var(--muted);cursor:pointer;transition:.18s ease}
+.reportdrop:hover,.reportdrop.dragover{border-color:#43d17d;background:#133025;color:#e9fff1;transform:translateY(-1px)}
+.reportdrop strong{display:block;color:var(--txt);font-size:14px;margin-bottom:4px}
+.reportdrop .dropicon{display:block;font-size:25px;line-height:1;margin-bottom:7px}
+.charttoggles{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}
+.charttoggle{display:flex;align-items:center;gap:7px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:#132035;color:var(--txt);cursor:pointer;font-size:12.5px}
+.charttoggle input{width:auto;margin:0;accent-color:var(--toggle-color,#3b82f6)}
+.charttoggle .dot{width:10px;height:10px;border-radius:50%;background:var(--toggle-color,#3b82f6)}
+@media(max-width:820px){.row2{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header>
+  <h1>סימולטור תמהילי משכנתא</h1>
+  <span class="sub">חישוב והשוואה של תמהילים · מבוסס תבנית simple save</span>
+  <div class="toolbar">
+    <button class="btn green" id="clientSimulatorName" title="טעינת נתוני דוגמה" onclick="loadExample()">סימולטור · שם לקוח</button>
+    <button class="btn alt" onclick="resetAll()">איפוס</button>
+    <button class="btn alt" onclick="saveJSON()">שמירה</button>
+    <button class="btn alt" onclick="document.getElementById('loadfile').click()">פתיחה</button>
+    <input type="file" id="loadfile" accept="application/json" style="display:none" onchange="loadJSON(event)">
+    <button class="btn" onclick="window.print()">הדפסה / PDF</button>
+  </div>
+</header>
+
+<div class="tabs" id="tabs">
+  <div class="tab active" data-v="personal">נתונים אישיים</div>
+  <div class="tab" data-v="financial">נתונים כלכליים</div>
+  <div class="tab" data-v="mixes">תמהילים</div>
+  <div class="tab" data-v="templates">תבניות קבועות</div>
+  <div class="tab" data-v="params">פרמטרים</div>
+  <div class="tab" data-v="insurance">ביטוח חיים</div>
+  <div class="tab" data-v="prepayment">עמלת היוון</div>
+  <div class="tab" data-v="summary">סיכום והשוואה</div>
+  <div class="tab" data-v="schedule">לוחות סילוקין</div>
+  <div class="tab" data-v="ref">טבלאות עזר</div>
+</div>
+
+<main>
+  <!-- PERSONAL -->
+  <section class="view active" id="v-personal">
+    <div class="panel">
+      <h2>נתונים אישיים</h2>
+      <p class="hint">חוצץ ניתן לעריכה · גיל והכנסה כוללת מחושבים אוטומטית</p>
+      <div class="scroll"><table id="personalTbl"></table></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn alt" onclick="addBorrower()">+ הוסף לקוח</button>
+      </div>
+      <div class="cards" style="margin-top:14px">
+        <div class="kpi"><div class="l">הכנסה חודשית כוללת</div><div class="v" id="kTotIncome">—</div></div>
+        <div class="kpi"><div class="l">מס׳ לקוחות</div><div class="v" id="kBorrowers">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINANCIAL -->
+  <section class="view" id="v-financial">
+    <div class="panel">
+      <h2>נתונים כלכליים</h2>
+      <p class="hint">חוצץ ניתן לעריכה · סכום דרוש ומקס׳ החזר אפשרי מחושבים. תאריך הבקשה משמש כתאריך התחלה ללוחות הסילוקין.</p>
+      <div class="grid" id="finGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"></div>
+    </div>
+    <div class="panel">
+      <h2>הלוואות קיימות</h2>
+      <p class="hint">החזר חודשי מחושב = סכום / (שנים × 12)</p>
+      <div class="scroll"><table id="loansTbl"></table></div>
+      <button class="btn alt" style="margin-top:10px" onclick="addLoan()">+ הוסף הלוואה</button>
+    </div>
+    <div class="panel">
+      <h2>שאלות סינון</h2>
+      <div class="grid" id="flagsGrid" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr))"></div>
+    </div>
+  </section>
+
+  <!-- MIXES -->
+  <section class="view" id="v-mixes">
+    <div class="panel">
+      <h2>תמהילים</h2>
+      <p class="hint">כל תמהיל הוא שבלונה ניתנת לעריכה של עד 10 מסלולים. הזן אחוז לכל מסלול ולחץ „חשב לפי טווח” כדי להתאים את התקופות לטווח ההחזר שהוגדר בנתונים הכלכליים.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr));margin:12px 0">
+        <div class="f"><label>סכום משכנתא לחישוב</label><input id="mixLoanInput" type="number" dir="ltr" onchange="setMixCalculatorValue('loanAmount',this.value)"></div>
+        <div class="f"><label>החזר חודשי מינימלי</label><input id="mixMinPayInput" type="number" dir="ltr" onchange="setMixCalculatorValue('minPay',this.value)"></div>
+        <div class="f"><label>החזר חודשי מקסימלי</label><input id="mixMaxPayInput" type="number" dir="ltr" onchange="setMixCalculatorValue('maxPayDesired',this.value)"></div>
+        <div class="f">
+          <label>תבנית קבועה</label>
+          <select id="clockTemplateSelect">
+            <option value="clock1">שעון 1</option>
+            <option value="clock2">שעון 2</option>
+            <option value="clock3">שעון 3</option>
+            <option value="clock4">שעון 4</option>
+            <option value="clock5">שעון 5</option>
+          </select>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn green" onclick="applyAndCalculateClock()">טען וחשב שעון</button>
+        <button class="btn alt" onclick="calculateAllMixes()">חשב 5 הצעות לפי המשכנתא הקיימת</button>
+      </div>
+      <div class="calcstatus ok" id="currentMortgageProposalSource" style="display:none;margin-top:10px"></div>
+      <div class="legend">
+        <span><span class="swatch" style="background:var(--inp);border:1px solid var(--line)"></span> שדה להזנה</span>
+        <span><span class="swatch" style="background:var(--calc);border:1px solid var(--calcb)"></span> מחושב אוטומטית</span>
+        <span>האופטימיזציה מקצרת קודם קבועה צמודה ולאחר מכן קבועה לא צמודה, עד לתקרת ההחזר.</span>
+      </div>
+    </div>
+    <div id="mixesContainer"></div>
+  </section>
+
+  <!-- TEMPLATES -->
+  <section class="view" id="v-templates">
+    <div class="panel">
+      <h2>עריכת תבניות קבועות — שעונים 1–5</h2>
+      <p class="hint">השינויים נשמרים כתבנית המקור וישמשו בכל חישוב חדש. מסלול עם 0% לא יופיע בהצעה.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:14px">
+        <div class="f" style="width:220px"><label>בחר תבנית</label>
+          <select id="templateEditorSelect" onchange="selectTemplateForEdit(this.value)">
+            <option value="clock1">שעון 1</option><option value="clock2">שעון 2</option>
+            <option value="clock3">שעון 3</option><option value="clock4">שעון 4</option><option value="clock5">שעון 5</option>
+          </select>
+        </div>
+        <button class="btn green" onclick="saveTemplateEditor()">שמור תבנית</button>
+        <button class="btn alt" onclick="resetTemplateEditor()">שחזר ברירת מחדל</button>
+      </div>
+      <div class="f" style="max-width:360px;margin-bottom:12px"><label>שם התבנית</label><input id="templateEditorName" oninput="updateTemplateDraftName(this.value)"></div>
+      <div class="panel" style="background:#111c2c;margin-bottom:12px">
+        <h2>התניות חישוב לתבנית</h2>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-top:10px">
+          <label style="display:flex;gap:7px;align-items:center;cursor:pointer"><input type="checkbox" id="templateShortenFixed" style="width:auto" onchange="updateTemplateCondition('shortenFixed',this.checked)"> לקצר מסלולים קבועים ככל שניתן עד ההחזר המקסימלי</label>
+          <label style="display:flex;gap:7px;align-items:center;cursor:pointer"><input type="checkbox" id="templateLinkedFirst" style="width:auto" onchange="updateTemplateCondition('linkedFixedFirst',this.checked)"> להתחיל בקיצור הקבועה הצמודה למדד</label>
+        </div>
+      </div>
+      <div class="scroll"><table id="templateEditorTbl"></table></div>
+      <button class="btn alt" style="margin-top:10px" onclick="addTemplateRoute()">+ הוסף מסלול לתבנית</button>
+      <div id="templateEditorStatus" class="calcstatus ok" style="display:none;margin-top:10px"></div>
+    </div>
+  </section>
+
+  <!-- PARAMS -->
+  <section class="view" id="v-params">
+    <div class="panel">
+      <h2>פרמטרים — מדדי הצמדה (צפי שינוי שנתי)</h2>
+      <p class="hint">חוצץ ניתן לעריכה · משפיע על מסלולים צמודי מדד/מט״ח</p>
+      <div class="grid" id="paramsGrid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));max-width:680px"></div>
+    </div>
+    <div class="panel">
+      <h2>עדכון מדד חודשי בפועל</h2>
+      <p class="hint">במצב חודשי, כל תשלום מוצמד לפי השינוי שהוזן לחודש שלו. חודש ללא נתון מחושב כ־0% ולא לפי תחזית.</p>
+      <div class="f" style="max-width:340px;margin-bottom:14px">
+        <label>שיטת חישוב ההצמדה</label>
+        <select id="indexCalcMode" onchange="setIndexCalcMode(this.value)">
+          <option value="annual">צפי שנתי</option>
+          <option value="monthly">מדד חודשי בפועל</option>
+        </select>
+      </div>
+      <div id="monthlyIndexArea">
+        <div class="scroll" style="max-width:720px;max-height:430px"><table id="monthlyIndexTbl"></table></div>
+        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
+          <button class="btn alt" onclick="addMonthlyIndex()">+ הוסף חודש</button>
+          <button class="btn alt" onclick="fillMonthlyIndexYear()">הוסף 12 חודשים מתאריך הבקשה</button>
+          <button class="btn alt" onclick="fillMonthlyIndexTerm()">צור טבלה לכל תקופת המשכנתא</button>
+          <button class="btn alt" onclick="resetMonthlyIndexRates()">אפס את כל המדדים ל־0</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LIFE INSURANCE -->
+  <section class="view" id="v-insurance">
+    <div class="panel">
+      <h2>השוואת פוליסה קיימת</h2>
+      <p class="hint">העלה או גרור פוליסה עדכנית. המערכת תזהה את סוג הביטוח והנתונים המרכזיים ותשווה אותם להצעה המחושבת.</p>
+      <div class="reportdrop" id="insurancePolicyDrop" onclick="document.getElementById('insurancePolicyFile').click()"
+        ondragenter="insurancePolicyDrag(event,true)" ondragover="insurancePolicyDrag(event,true)"
+        ondragleave="insurancePolicyDrag(event,false)" ondrop="insurancePolicyDrop(event)">
+        <span class="dropicon">⇩</span><strong>גרור לכאן פוליסת ביטוח קיימת</strong>
+        <span>או לחץ לבחירת PDF, TXT או CSV</span>
+      </div>
+      <input type="file" id="insurancePolicyFile" multiple accept=".pdf,.txt,.csv,application/pdf,text/plain,text/csv" style="display:none" onchange="handleInsurancePolicyFile(event)">
+      <div class="calcstatus ok" id="insurancePolicyStatus" style="display:none;margin-top:10px"></div>
+      <div class="grid" id="insurancePolicyGrid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr));margin-top:14px"></div>
+      <div class="cards" id="insurancePolicyComparison" style="margin-top:14px"></div>
+    </div>
+    <div class="panel">
+      <h2>מחשבון ביטוח חיים למשכנתא</h2>
+      <p class="hint">הפרמיה נקבעת אחת לשנה בתשלומים 1, 13, 25 וכן הלאה, לפי גיל המבוטח ויתרת הקרן בתחילת שנת הביטוח.</p>
+      <div class="grid" id="insuranceGrid" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn green" onclick="renderInsurance()">חשב ביטוח</button>
+        <button class="btn alt" onclick="loadInsuranceFromSelectedMix()">טען נתונים מהתמהיל</button>
+      </div>
+      <div class="warnbox" id="insuranceWarning" style="display:none"></div>
+    </div>
+    <div class="panel">
+      <h2>השוואת חברות ביטוח</h2>
+      <div class="cards" id="insuranceCards"></div>
+      <div class="chartbox"><h4>פרמיה חודשית לאורך תקופת המשכנתא</h4><canvas id="chartInsurance" height="120"></canvas></div>
+    </div>
+    <div class="panel">
+      <h2>התפתחות שנתית של הפרמיה</h2>
+      <p class="hint">כל שורה מייצגת עדכון שנתי בתשלומים 1, 13, 25 וכן הלאה.</p>
+      <div class="scroll"><table id="insuranceAnnualTbl"></table></div>
+    </div>
+    <div class="panel">
+      <h2>פירוט חודשי</h2>
+      <p class="hint">מוצגת החברה שנבחרה. הפרמיה מתעדכנת בתחילת כל שנת ביטוח ונשארת קבועה במשך 12 תשלומים.</p>
+      <div class="scroll"><table id="insuranceTbl"></table></div>
+    </div>
+    <div class="panel">
+      <h2>שבלונה לביטוח מבנה</h2>
+      <p class="hint">הנתונים נשמרים כחלק מתיק הלקוח ומשמשים להכנת הצעה לביטוח המבנה.</p>
+      <div class="grid" id="buildingInsuranceGrid" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))"></div>
+      <div class="note" style="margin-top:12px">* סכום ביטוח המבנה הוא עלות הקמת המבנה מחדש בלבד, ללא שווי הקרקע.</div>
+      <div class="cards" style="margin-top:14px">
+        <div class="kpi"><div class="l">סוג המבנה</div><div class="v" id="buildingTypeSummary" style="font-size:17px">—</div></div>
+        <div class="kpi"><div class="l">סכום ביטוח מבנה</div><div class="v" id="buildingAmountSummary">—</div></div>
+        <div class="kpi"><div class="l">עבר ביטוחי</div><div class="v" id="buildingHistorySummary" style="font-size:17px">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EARLY REPAYMENT FEE -->
+  <section class="view" id="v-prepayment">
+    <div class="panel">
+      <h2>מחשבון עמלת היוון (פירעון מוקדם)</h2>
+      <p class="hint">החישוב מבוסס על נוסחת בנק ישראל: השוואת הערך הנוכחי לפי הריבית הממוצעת ביום הפירעון (A) מול ריבית ההלוואה (R).</p>
+      <div class="grid" id="prepaymentGrid" style="grid-template-columns:repeat(auto-fit,minmax(190px,1fr))"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn green" onclick="renderPrepayment()">חשב עמלת היוון</button>
+        <button class="btn alt" onclick="loadPrepaymentRoute()">טען מסלול מהמשכנתא</button>
+      </div>
+      <div class="warnbox" id="prepaymentWarning" style="display:none"></div>
+    </div>
+    <div class="panel">
+      <h2>תוצאת החישוב</h2>
+      <div class="cards">
+        <div class="kpi"><div class="l">ערך נוכחי לפי A</div><div class="v" id="prepayPvA">—</div></div>
+        <div class="kpi"><div class="l">ערך נוכחי לפי R</div><div class="v" id="prepayPvR">—</div></div>
+        <div class="kpi"><div class="l">הפסד כלכלי לפני הפחתות</div><div class="v" id="prepayGross">—</div></div>
+        <div class="kpi"><div class="l">עמלת היוון משוערת</div><div class="v" id="prepayFinal">—</div></div>
+      </div>
+      <div class="note" id="prepaymentExplanation" style="margin-top:12px"></div>
+    </div>
+    <div class="panel">
+      <h2>פירוט רכיבי הנוסחה</h2>
+      <div class="scroll"><table id="prepaymentTbl"></table></div>
+      <div class="note" style="margin-top:10px">זהו חישוב סימולטיבי לפי הנוסחה שצורפה. החיוב בפועל נקבע בידי הבנק לפי נתוני הסילוק, הריבית הממוצעת וההפחתות החלות במועד הפירעון.</div>
+    </div>
+  </section>
+
+  <!-- SUMMARY -->
+  <section class="view" id="v-summary">
+    <div class="panel">
+      <h2>סיכום והשוואת תמהילים</h2>
+      <p class="hint">כל הערכים מחושבים מהמסלולים. התא הירוק = הטוב ביותר במדד.</p>
+      <div class="scroll"><table id="cmpTbl" class="cmp"></table></div>
+      <div class="warnbox" id="ruleWarn" style="display:none"></div>
+    </div>
+    <div class="panel">
+      <h2>גרפים</h2>
+      <p class="hint">סמן או בטל תמהילים להצגה משותפת בגרפים.</p>
+      <div class="charttoggles" id="chartMixToggles"></div>
+      <div class="row2">
+        <div class="chartbox"><h4>יתרת קרן והצמדה מול חודש</h4><canvas id="chartBalance" height="150"></canvas></div>
+        <div class="chartbox"><h4>תשלום חודשי מול חודש</h4><canvas id="chartPay" height="150"></canvas></div>
+      </div>
+      <div class="chartbox"><h4>מדדים כספיים לכל התמהילים שנבחרו</h4><canvas id="chartCompare" height="140"></canvas></div>
+      <div class="chartbox"><h4>רמת סיכון כללית לכל תמהיל</h4><canvas id="chartRiskCompare" height="90"></canvas></div>
+    </div>
+    <div class="panel" id="existingComparisonPanel" style="display:none">
+      <h2>השוואת שעון מול משכנתא קיימת</h2>
+      <p class="hint">בחר שעון להצגה ישירה מול הנתונים שיובאו מדוח היתרות.</p>
+      <div class="f" style="max-width:280px;margin-bottom:10px">
+        <label>שעון להשוואה</label>
+        <select id="existingCompareSelect" onchange="drawExistingComparison()"></select>
+      </div>
+      <div class="row2">
+        <div class="chartbox"><h4>יתרת קרן לאורך התקופה</h4><canvas id="chartExistingBalance" height="150"></canvas></div>
+        <div class="chartbox"><h4>החזר חודשי לאורך התקופה</h4><canvas id="chartExistingPay" height="150"></canvas></div>
+      </div>
+      <div class="chartbox"><h4>השוואה כספית: הצעה חדשה מול משכנתא קיימת</h4><canvas id="chartExistingCosts" height="140"></canvas></div>
+      <div class="chartbox"><h4>השוואת רמת סיכון</h4><canvas id="chartExistingRisk" height="90"></canvas></div>
+    </div>
+  </section>
+
+  <!-- SCHEDULE -->
+  <section class="view" id="v-schedule">
+    <div class="panel">
+      <h2>לוחות סילוקין — פירוט תשלומים</h2>
+      <p class="hint">פירוט חודשי מלא לכל מסלול ולמסלול המסכם, כמו גיליונות ה״חלופה״ באקסל.</p>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+        <div class="f" style="max-width:220px"><label>בחר תמהיל</label><select id="schMixSel" onchange="renderSchedule()"></select></div>
+        <div class="f" style="max-width:160px"><label>תצוגה</label><select id="schView" onchange="renderSchedule()"><option value="month">חודשי</option><option value="year">שנתי (מסכם)</option></select></div>
+        <div class="f"><label>&nbsp;</label><label style="display:flex;gap:6px;align-items:center;color:var(--txt);cursor:pointer"><input type="checkbox" id="schRoutes" style="width:auto" checked onchange="renderSchedule()"> הצג פירוט לכל מסלול</label></div>
+        <button class="btn alt" onclick="exportScheduleCSV()">ייצוא CSV</button>
+      </div>
+    </div>
+    <div id="scheduleContainer"></div>
+  </section>
+
+  <!-- REF -->
+  <section class="view" id="v-ref">
+    <div class="panel">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div>
+          <h2>טבלאות תעריפי ביטוח חיים</h2>
+          <p class="hint" style="margin-bottom:0">תעריפים לפי מין, עישון, גיל וחברת ביטוח — לכל 10,000 ₪ ביטוח.</p>
+        </div>
+        <button class="btn alt" id="insuranceRatesToggle" style="margin-inline-start:auto" onclick="toggleInsuranceRateEditor()">עדכון תעריפים</button>
+      </div>
+      <div id="insuranceRatesEditor" style="display:none;margin-top:16px">
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end;margin-bottom:12px">
+          <div class="f" style="width:250px"><label>טבלת תעריפים לעריכה</label><select id="insuranceRateProfile" onchange="setInsuranceRateProfile(this.value)"></select></div>
+          <div class="f" style="width:190px"><label>חברה להעלאת PDF</label><select id="insurancePdfCompany"></select></div>
+          <button class="btn green" onclick="document.getElementById('insurancePdfFile').click()">העלה PDF לחברה</button>
+          <input type="file" id="insurancePdfFile" accept="application/pdf,.pdf" style="display:none" onchange="importInsuranceRatesPdf(event)">
+          <button class="btn alt" onclick="resetInsuranceRateProfile()">שחזר את הטבלה הנוכחית</button>
+          <button class="btn alt" onclick="resetAllInsuranceRates()">שחזר את כל תעריפי המקור</button>
+        </div>
+        <div class="calcstatus ok" id="insurancePdfStatus" style="display:none;margin-bottom:10px"></div>
+        <div class="scroll"><table id="insuranceRatesTbl"></table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <div>
+          <h2>טבלאות תעריפי ביטוח מבנה</h2>
+          <p class="hint" style="margin-bottom:0">אזור זה מוכן לקליטת תעריפי ביטוח המבנה כאשר יתקבלו.</p>
+        </div>
+        <button class="btn alt" id="buildingRatesToggle" style="margin-inline-start:auto" onclick="toggleBuildingRateEditor()">עדכון תעריפי מבנה</button>
+      </div>
+      <div id="buildingRatesEditor" style="display:none;margin-top:16px">
+        <div class="warnbox">עדיין לא הוזנו תעריפי ביטוח מבנה. כאשר יצורף קובץ תעריפים, הטבלה תיבנה כאן ותשמש את מחשבון ביטוח המבנה.</div>
+        <div class="scroll" style="margin-top:12px"><table id="buildingRatesTbl">
+          <thead><tr><th>חברה</th><th>סוג מבנה</th><th>גיל מבנה</th><th>סכום ביטוח</th><th>תעריף</th></tr></thead>
+          <tbody><tr><td colspan="5">אין עדיין נתוני תעריפים</td></tr></tbody>
+        </table></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>טבלת ריביות — מטרות דיור</h2>
+      <p class="hint">משמשת להצעות עבור רכישה, מחזור והלוואות למטרות דיור. הערכים מוזנים באחוזים.</p>
+      <div class="scroll"><table id="generalRatesTbl"></table></div>
+    </div>
+    <div class="panel">
+      <h2>טבלת ריביות — הלוואה לכל מטרה / נכס קיים</h2>
+      <p class="hint">משמשת אוטומטית כאשר בדוח מזוהה „הלוואה לדיור נכס קיים”. ניתן להגדיר ריביות ומדרגות תקופה שונות.</p>
+      <div class="scroll"><table id="allPurposeRatesTbl"></table></div>
+    </div>
+    <div class="panel">
+      <h2>טבלת ריביות לפי תאריך</h2>
+      <p class="hint">מיועדת לשעון שמסומן „משכנתא שנלקחה היום”. המערכת תבחר את הרשומה האחרונה עד תאריך לקיחת המשכנתא, לפי מטרת ההלוואה, סוג המסלול והתקופה.</p>
+      <div class="scroll"><table id="datedRatesTbl"></table></div>
+      <button class="btn alt" style="margin-top:10px" onclick="addDatedRate()">+ הוסף ריבית לפי תאריך</button>
+    </div>
+    <div class="panel"><h2>טבלת ריביות לפי בנק (קבוע / עזר)</h2><div class="scroll"><table id="ratesTbl"></table></div></div>
+    <div class="panel"><h2>רמות סיכון</h2>
+      <div class="scroll"><table id="riskTbl"></table></div>
+      <button class="btn alt" style="margin-top:10px" onclick="addRiskRule()">+ הוסף כלל סיכון</button>
+      <div class="note">רמת הסיכון של כל תמהיל מחושבת כממוצע משוקלל לפי אחוזי המסלולים.</div>
+    </div>
+    <div class="panel"><h2>רשימות (ערכים קבועים)</h2><div class="scroll"><table id="listsTbl"></table></div></div>
+  </section>
+</main>
+<input type="file" id="mortgageReportFile" accept=".pdf,.csv,.txt,.json,application/pdf,text/csv,text/plain,application/json" style="display:none" onchange="handleMortgageReport(event)">
+<div class="modalback" id="importMortgageModal">
+  <div class="modalbox">
+    <div class="modalhead"><h2>תצוגה מקדימה — דוח יתרות</h2><button class="btn alt" onclick="closeMortgageImport()">סגור</button></div>
+    <p class="hint" id="importMortgageHint">בדוק ותקן את הנתונים לפני עדכון המשכנתא הקיימת.</p>
+    <div class="f" style="max-width:360px;margin-bottom:12px">
+      <label>סוג ההלוואה לצורך חישוב ההצעות</label>
+      <select id="importMortgagePurpose" onchange="pendingImportPurpose=this.value">
+        <option value="housing">מטרות דיור</option>
+        <option value="allPurpose">לכל מטרה / נכס קיים</option>
+      </select>
+    </div>
+    <div class="scroll"><table id="importMortgageTbl"></table></div>
+    <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
+      <button class="btn alt" onclick="addImportedRoute()">+ הוסף מסלול</button>
+      <button class="btn green" onclick="confirmMortgageImport()">עדכן משכנתא קיימת</button>
+    </div>
+  </div>
+</div>
+
+<script>
+window.__pdfEngineReady=typeof pdfjsLib!=='undefined';
+/* ===================== מנוע חישוב (מאומת מול קובץ הדוגמה) ===================== */
+function num(v){ const n=parseFloat(v); return isFinite(n)?n:0; }
+function PMT(r,n,pv){ if(n<=0) return 0; if(r===0) return -pv/n; return -(r*pv)/(1-Math.pow(1+r,-n)); }
+function indexExpect(type,p){
+  if(type==='מדד') return num(p['מדד']);
+  if(type==='דולר') return num(p['דולר']);
+  if(type==='אירו') return num(p['אירו']);
+  return 0;
+}
+function monthKey(dateStr,offset=0){
+  const d=dateStr?new Date(dateStr+'T12:00:00'):new Date();
+  if(isNaN(d))return '';
+  d.setMonth(d.getMonth()+offset);
+  return d.toISOString().slice(0,7);
+}
+function monthlyIndexRate(paymentMonth,forceMonthly=false,startDate=''){
+  if(!state||(!forceMonthly&&state.indexCalcMode!=='monthly'))return null;
+  const key=monthKey(startDate||state.financial?.date||today(),paymentMonth-1);
+  const row=(state.monthlyIndices||[]).find(x=>x.month===key);
+  return row?num(row.rate):0;
+}
+function routeAnnualIndex(rt,params){
+  return rt.customAnnualIndex==null||rt.customAnnualIndex===''?indexExpect(rt.indexType,params):num(rt.customAnnualIndex);
+}
+function displayedAnnualIndex(rt,params){
+  if(rt.indexType!=='מדד'||!state||(!rt.forceActualIndex&&state.indexCalcMode!=='monthly'))return routeAnnualIndex(rt,params);
+  return (state.monthlyIndices||[]).reduce((p,x)=>p*(1+num(x.rate)),1)-1;
+}
+
+/* מחשב לוח סילוקין למסלול בודד. */
+function routePurposeParts(rt){
+  const split=rt.purposeSplit;
+  if(!split)return [];
+  const housing=Math.max(0,num(split.housing));
+  const allPurpose=Math.max(0,num(split.allPurpose));
+  const total=housing+allPurpose;
+  if(total<=0)return [];
+  const parts=[];
+  if(housing>0)parts.push({purpose:'housing',share:housing/total});
+  if(allPurpose>0)parts.push({purpose:'allPurpose',share:allPurpose/total});
+  return parts;
+}
+function mergeSplitRouteCalcs(parts){
+  const maxN=parts.reduce((max,part)=>Math.max(max,part.calc.n||0),0);
+  const amount=parts.reduce((sum,part)=>sum+num(part.amount),0);
+  const out={S:0,T:0,n:maxN,L:[],baseL:[],basePrin:[],indexBal:[],M:[],prin:[],intr:[],idxEff:[],idxPrin:[],idxIntr:[],cum:[],
+             annualRate:0,enteredAnnualRate:0,invalidNegativeRate:false,effRate:0,annualIndex:0};
+  const arrayFields=['L','baseL','basePrin','indexBal','M','prin','intr','idxEff','idxPrin','idxIntr','cum'];
+  parts.forEach(part=>{
+    const c=part.calc, weight=amount>0?num(part.amount)/amount:0;
+    out.S+=num(c.S); out.T+=num(c.T);
+    out.annualRate+=num(c.annualRate)*weight;
+    out.enteredAnnualRate+=num(c.enteredAnnualRate)*weight;
+    out.effRate+=num(c.effRate)*weight;
+    out.annualIndex+=num(c.annualIndex)*weight;
+    out.invalidNegativeRate=out.invalidNegativeRate||!!c.invalidNegativeRate;
+    arrayFields.forEach(field=>{
+      for(let i=0;i<=maxN;i++)out[field][i]=num(out[field][i])+num(c[field]?.[i]);
+    });
+  });
+  return out;
+}
+function calcRoute(rt, params){
+  const E = num(rt.amount), Dy = num(rt.years);
+  const purposeParts=routePurposeParts(rt);
+  if(E>0&&purposeParts.length>1&&!rt._purposeSplitBypass){
+    return mergeSplitRouteCalcs(purposeParts.map(part=>({
+      amount:E*part.share,
+      calc:calcRoute({...rt,_purposeSplitBypass:true,purposeSplit:null,loanPurpose:part.purpose,amount:E*part.share},params)
+    })));
+  }
+  const n = Math.trunc(Dy*12);
+  const selectedRate=rt.useGeneralRate?generalRateForRoute(rt,Dy):{anchor:num(rt.anchor),margin:num(rt.margin)};
+  const enteredAnnualRate = num(selectedRate.anchor)+num(selectedRate.margin);   // עוגן + מרווח
+  const annualRate = Math.max(0,enteredAnnualRate);
+  const monthlyRate = rt.dailyInterest?Math.pow(1+annualRate/365,365/12)-1:annualRate/12;
+  const out = {S:0,T:0,n:n,L:[],baseL:[],basePrin:[],indexBal:[],M:[],prin:[],intr:[],idxEff:[],idxPrin:[],idxIntr:[],cum:[],annualRate:annualRate,
+               enteredAnnualRate:enteredAnnualRate,invalidNegativeRate:enteredAnnualRate<0,
+               effRate:Math.pow(1+monthlyRate,12)-1,
+               annualIndex:displayedAnnualIndex(rt,params)};
+  if(n<=0||E<=0) return out;
+  const r = monthlyRate;
+  const F = rt.board||'שפיצר', G = rt.balloon||'', H = num(rt.balloonMonths);
+  const isBalloon = (G==='בלון מלא'||G==='בלון חלקי');
+  const isGrace   = (G==='גרייס מלא'||G==='גרייס חלקי');
+  const L=[0],B=[0],N=[0],O=[0],P=[0],R=[0],M=[0];
+  let cumM=0,cumO=0,sumR=0,T=0;
+  const idxStop = isBalloon ? H : n;
+  for(let m=1;m<=n;m++){
+    const actualMonthly=rt.indexType==='מדד'?monthlyIndexRate(m,!!rt.forceActualIndex,rt.startDateOverride):null;
+    const idx=(actualMonthly===null?routeAnnualIndex(rt,params)/12:actualMonthly)*num(rt.indexPct);
+    if(m===1){ L[m] = (Dy*12>1)? E : 0; B[m]=L[m]; }
+    else{
+      if(Dy*12>=m){
+        if(isBalloon){ L[m] = (H===m||H+1>m)? P[m-1] : 0; }
+        else if(G==='גרייס מלא'){ L[m] = (H+1===m)? P[m-1]+sumR : P[m-1]; }
+        else { L[m] = P[m-1]; }
+      } else L[m]=0;
+      B[m]=Math.max(0,B[m-1]-(out.basePrin[m-1]||0));
+    }
+    O[m] = L[m]*r;
+    if(L[m]>0){
+      if(isBalloon) N[m]=0;
+      else if(isGrace && H>=m) N[m]=0;
+      else if(F==='שפיצר') N[m] = -PMT(r,n-m+1,L[m]) - O[m];
+      else N[m] = L[m]/(n-m+1);
+    } else N[m]=0;
+    P[m] = (L[m]-N[m])*(idx+1);
+    R[m] = O[m]+N[m];
+    sumR += R[m];
+    if(G==='בלון מלא') M[m] = (H===m)? P[m] : 0;
+    else if(G==='בלון חלקי') M[m] = (H>m)? O[m] : (H===m? P[m]+O[m] : 0);
+    else if(G==='גרייס מלא') M[m] = (H>=m)? 0 : (F==='שפיצר'? -PMT(r,n-m+1,L[m]) : R[m]);
+    else if(G==='גרייס חלקי') M[m] = (H>=m)? O[m] : (F==='שפיצר'? -PMT(r,n-m+1,L[m]) : R[m]);
+    else M[m] = R[m];
+    cumM+=M[m]; cumO+=O[m];
+    let q;
+    if(G==='בלון חלקי') q = (H===m)? cumM : 0;
+    else if(G==='בלון מלא') q = (H===m)? cumM+cumO : 0;
+    else q = cumM;
+    if(m===idxStop) T=q;
+    const idxPrin=(L[m]-N[m])*idx, idxIntr=O[m]*idx;
+    const basePrin=L[m]>0?N[m]*(B[m]/L[m]):0;
+    out.basePrin[m]=basePrin;
+    out.baseL[m]=B[m];
+    out.indexBal[m]=Math.max(0,L[m]-B[m]);
+    out.prin[m]=N[m]; out.intr[m]=O[m]; out.idxPrin[m]=idxPrin; out.idxIntr[m]=idxIntr; out.idxEff[m]=idxPrin+idxIntr; out.cum[m]=cumM;
+  }
+  out.S = M[1]||0; out.T=T; out.L=L; out.M=M;
+  return out;
+}
+
+function calcMix(routes,params){
+  let E=0,wYears=0,wRate=0,S=0,T=0,maxN=0,totalInterest=0,exitFee=0;
+  const per=[];
+  routes.forEach(rt=>{
+    const c=calcRoute(rt,params); per.push(c);
+    const e=num(rt.amount);
+    E+=e; wYears+=e*num(rt.years); wRate+=e*c.annualRate; S+=c.S; T+=c.T;
+    exitFee+=num(rt.exitFee);
+    totalInterest+=c.intr.reduce((sum,value)=>sum+num(value),0);
+    if(c.n>maxN)maxN=c.n;
+  });
+  const indexation=Math.max(0,T-E-totalInterest);
+  return {
+    E,
+    exitFee,
+    totalAmount:E+exitFee,
+    principal:E,
+    avgYears:E>0?wYears/E:0,
+    avgRate:E>0?wRate/E:0,
+    firstPay:S,
+    total:T,
+    interest:totalInterest,
+    indexation,
+    per,
+    maxN
+  };
+}
+function defaultRiskRules(){
+  return [
+    {routeKind:'prime',fromMonths:1,toMonths:12,indexed:'לא',exitPenalty:'נמוך',risk:1},
+    {routeKind:'variable',fromMonths:1,toMonths:59,indexed:'לא',exitPenalty:'בינוני',risk:2},
+    {routeKind:'variable',fromMonths:1,toMonths:59,indexed:'כן',exitPenalty:'בינוני',risk:3},
+    {routeKind:'variable',fromMonths:60,toMonths:360,indexed:'לא',exitPenalty:'גבוה',risk:3},
+    {routeKind:'variable',fromMonths:60,toMonths:360,indexed:'כן',exitPenalty:'גבוה',risk:4},
+    {routeKind:'fixed',fromMonths:48,toMonths:360,indexed:'לא',exitPenalty:'גבוה',risk:3},
+    {routeKind:'fixed',fromMonths:48,toMonths:360,indexed:'כן',exitPenalty:'גבוה',risk:4}
+  ];
+}
+function routeChangePeriod(rt){
+  const kind=inferRouteKind(rt);
+  return kind==='fixed'?Math.round(num(rt.years)*12):(kind==='prime'?1:Math.round(num(rt.changeMonths)||60));
+}
+function riskRuleForRoute(rt){
+  const months=routeChangePeriod(rt),indexed=rt.indexType==='מדד'?'כן':'לא',kind=inferRouteKind(rt);
+  const rules=state.riskRules||defaultRiskRules();
+  return rules.find(rule=>(rule.routeKind==='all'||rule.routeKind===kind)&&months>=num(rule.fromMonths)&&months<=num(rule.toMonths)&&(rule.indexed==='הכול'||rule.indexed===indexed))
+    ||rules.find(rule=>(rule.routeKind==='all'||rule.routeKind===kind)&&(rule.indexed==='הכול'||rule.indexed===indexed))
+    ||{risk:1,exitPenalty:'נמוך'};
+}
+function mixRisk(routes){
+  const useShares=routes.reduce((sum,rt)=>sum+num(rt.sharePct),0)>0;
+  const weight=rt=>useShares?num(rt.sharePct):num(rt.amount);
+  const total=routes.reduce((sum,rt)=>sum+weight(rt),0);
+  if(total<=0)return {score:0,label:'—'};
+  const score=routes.reduce((sum,rt)=>sum+weight(rt)*num(riskRuleForRoute(rt).risk),0)/total;
+  const level=Math.min(5,Math.max(1,Math.round(score)));
+  const label=score<1.75?'נמוכה':score<2.75?'בינונית':score<3.75?'גבוהה':'גבוהה מאוד';
+  return {score,level,label};
+}
+
+function currentMortgageBalance(){
+  return calcMix(state.mixes?.current||[],state.params).totalAmount;
+}
+function mixLoanAmount(key=''){
+  const current=currentMortgageBalance();
+  if(key&&key!=='current'&&current>0)return current;
+  return num(state.financial?.loanAmount)||current||Math.max(0,...MIXKEYS.map(([k])=>calcMix(state.mixes[k]||[],state.params).E));
+}
+function validateMixTemplate(routes){
+  if(!routes.length)return 'יש להוסיף לפחות מסלול אחד.';
+  if(routes.length>10)return 'תמהיל יכול להכיל עד 10 מסלולים.';
+  const share=routes.reduce((s,r)=>s+num(r.sharePct),0);
+  if(Math.abs(share-100)>.01)return `סכום אחוזי המסלולים חייב להיות 100% (כעת ${share.toFixed(2)}%).`;
+  for(let i=0;i<routes.length;i++){
+    const rt=routes[i],kind=inferRouteKind(rt);
+    if(kind==='variable'&&num(rt.changeMonths)<=0)return `במסלול ${i+1} יש להזין כל כמה חודשים הריבית משתנה.`;
+    if(num(rt.anchor)+num(rt.margin)<0)return `במסלול ${i+1} הריבית הכוללת שלילית.`;
+  }
+  return '';
+}
+function candidateYears(rt,t){
+  const values=allowedYears(rt);
+  return values[Math.round(t*(values.length-1))];
+}
+function templateConditionsForMix(key){
+  const templateKey=/^t[1-5]$/.test(key)?'clock'+key.slice(1):'';
+  return activeClockTemplates()[templateKey]?.conditions||{shortenFixed:true,linkedFixedFirst:true};
+}
+function shortenFixedRoutesToMaximum(routes,maxPay,conditions={shortenFixed:true,linkedFixedFirst:true}){
+  if(conditions.shortenFixed===false)return [];
+  const fixed=routes.map((route,index)=>({route,index}))
+    .filter(item=>inferRouteKind(item.route)==='fixed'&&num(item.route.amount)>0)
+    .sort((a,b)=>{
+      const linkedDifference=Number(b.route.indexType==='מדד')-Number(a.route.indexType==='מדד');
+      return conditions.linkedFixedFirst===false?-linkedDifference:linkedDifference;
+    });
+  const shortened=[];
+  fixed.forEach(({route,index})=>{
+    const original=num(route.years);
+    const candidates=allowedYears(route).filter(years=>years<original).sort((a,b)=>a-b);
+    let selected=original;
+    for(const years of candidates){
+      route.years=years;
+      if(calcMix(routes,state.params).firstPay<=maxPay+.01){selected=years;break;}
+    }
+    route.years=selected;
+    if(selected<original)shortened.push({index,from:original,to:selected,linked:route.indexType==='מדד'});
+  });
+  return shortened;
+}
+function calculateMixToRange(key){
+  const routes=state.mixes[key]||[];
+  if(/^t[1-5]$/.test(key)&&currentMortgageBalance()>0)applyCurrentPurposeSplitToRoutes(routes);
+  applyMixSettingsToRoutes(key);
+  const error=validateMixTemplate(routes);
+  const minPay=num(state.financial?.minPay),maxPay=num(state.financial?.maxPayDesired);
+  const loan=mixLoanAmount(key);
+  if(error){state.mixCalcStatus[key]={ok:false,text:error};return false;}
+  if(loan<=0){state.mixCalcStatus[key]={ok:false,text:'יש להזין סכום משכנתא בנתונים הכלכליים.'};return false;}
+  if(minPay<=0||maxPay<=0||minPay>maxPay){state.mixCalcStatus[key]={ok:false,text:'יש להזין טווח החזר חודשי תקין.'};return false;}
+  routes.forEach(rt=>{
+    applyRouteKind(rt,inferRouteKind(rt));
+    rt.amount=loan*num(rt.sharePct)/100;
+  });
+  const target=(minPay+maxPay)/2;
+  let best=null;
+  for(let step=0;step<=240;step++){
+    const t=step/240;
+    routes.forEach(rt=>rt.years=candidateYears(rt,t));
+    const mix=calcMix(routes,state.params);
+    const inRange=mix.firstPay>=minPay&&mix.firstPay<=maxPay;
+    const distance=inRange?Math.abs(mix.firstPay-target):Math.min(Math.abs(mix.firstPay-minPay),Math.abs(mix.firstPay-maxPay));
+    if(!best||Number(inRange)>Number(best.inRange)||(inRange===best.inRange&&distance<best.distance)){
+      best={years:routes.map(r=>r.years),mix,inRange,distance};
+    }
+  }
+  best.years.forEach((years,i)=>routes[i].years=years);
+  for(let round=0;round<3;round++){
+    routes.forEach((rt,i)=>{
+      let localBest=best;
+      allowedYears(rt).forEach(years=>{
+        rt.years=years;
+        const mix=calcMix(routes,state.params);
+        const inRange=mix.firstPay>=minPay&&mix.firstPay<=maxPay;
+        const distance=inRange?Math.abs(mix.firstPay-target):Math.min(Math.abs(mix.firstPay-minPay),Math.abs(mix.firstPay-maxPay));
+        if(Number(inRange)>Number(localBest.inRange)||(inRange===localBest.inRange&&distance<localBest.distance)){
+          localBest={years:routes.map(r=>r.years),mix,inRange,distance};
+        }
+      });
+      best=localBest;
+      best.years.forEach((years,j)=>routes[j].years=years);
+    });
+  }
+  best.years.forEach((years,i)=>routes[i].years=years);
+  const conditions=templateConditionsForMix(key);
+  const shortened=shortenFixedRoutesToMaximum(routes,maxPay,conditions);
+  routes.forEach(rt=>{
+    if(rt.useGeneralRate){
+      const rate=generalRateForRoute(rt,rt.years);
+      rt.anchor=rate.anchor;rt.margin=rate.margin;
+    }
+  });
+  const finalMix=calcMix(routes,state.params);
+  const finalInRange=finalMix.firstPay>=minPay&&finalMix.firstPay<=maxPay;
+  const shortenedText=shortened.length
+    ?` תקופת הקבועה קוצרה עד למקסימום האפשרי${conditions.linkedFixedFirst!==false&&shortened.some(x=>x.linked)?' — בעדיפות לקבועה הצמודה':''}.`
+    :'';
+  state.mixCalcStatus[key]=finalInRange
+    ?{ok:true,text:`נמצא פתרון: החזר ראשון ${fmtMoney(finalMix.firstPay)} בטווח המבוקש.${shortenedText}`}
+    :{ok:false,text:`לא נמצא פתרון מלא בטווח. התוצאה הקרובה: ${fmtMoney(finalMix.firstPay)}. ניתן לערוך ריביות, אחוזים או תקופות.`};
+  return finalInRange;
+}
+function calculateAllMixes(){
+  Object.keys(activeClockTemplates()).forEach(templateKey=>{
+    const targetKey='t'+templateKey.replace('clock','');
+    loadClockTemplate(templateKey,targetKey);
+    applyCurrentPurposeSplitToRoutes(state.mixes[targetKey]);
+    calculateMixToRange(targetKey);
+  });
+  renderMixes();renderSummary();recalc();
+}
+function currentPurposeModeFromRoutes(){
+  const routes=state.mixes?.current||[];
+  const purposes=new Set(routes.map(route=>route.loanPurpose).filter(Boolean));
+  if(purposes.has('housing')&&purposes.has('allPurpose'))return 'mixed';
+  if(purposes.has('allPurpose'))return 'allPurpose';
+  return state.currentMortgagePurpose==='allPurpose'?'allPurpose':'housing';
+}
+function applyCurrentPurposeSplitToRoutes(routes){
+  const mode=currentPurposeModeFromRoutes();
+  state.currentMortgagePurpose=mode;
+  state.currentPurposeShares=calculateCurrentPurposeShares(state.mixes?.current||[]);
+  const shares=state.currentPurposeShares||{housing:1,allPurpose:0};
+  routes.forEach(route=>{
+    if(mode==='mixed'){
+      route.purposeSplit={housing:num(shares.housing),allPurpose:num(shares.allPurpose)};
+      route.loanPurpose='';
+    }else{
+      route.purposeSplit=null;
+      route.loanPurpose=mode==='allPurpose'?'allPurpose':'housing';
+    }
+  });
+}
+function buildProposalsFromCurrentMortgage(){
+  const balance=currentMortgageBalance();
+  if(balance<=0)return false;
+  state.currentMortgagePurpose=currentPurposeModeFromRoutes();
+  state.currentPurposeShares=calculateCurrentPurposeShares(state.mixes?.current||[]);
+  state.financial.loanAmount=Math.round(balance*100)/100;
+  const hasRange=num(state.financial?.minPay)>0&&num(state.financial?.maxPayDesired)>0&&num(state.financial.minPay)<=num(state.financial.maxPayDesired);
+  Object.keys(activeClockTemplates()).forEach(templateKey=>{
+    const targetKey='t'+templateKey.replace('clock','');
+    loadClockTemplate(templateKey,targetKey);
+    applyCurrentPurposeSplitToRoutes(state.mixes[targetKey]);
+    state.mixes[targetKey].forEach(rt=>syncRouteGeneralRate(rt));
+    state.mixes[targetKey].forEach(rt=>rt.amount=balance*num(rt.sharePct)/100);
+    if(hasRange)calculateMixToRange(targetKey);
+    else state.mixCalcStatus[targetKey]={ok:true,text:`הצעה לפי יתרת המשכנתא ${fmtMoney(balance)}. הזן טווח החזר כדי להתאים תקופות.`};
+  });
+  return true;
+}
+function classifyLoanPurpose(text){
+  const normalized=String(text||'').replace(/\s+/g,' ');
+  if(/נכס\s+קיים|לכל\s+מטרה|מטרה\s+אחרת|שיפוץ\s+ללא\s+רכישה/i.test(normalized))return 'allPurpose';
+  if(/לרכישה|רכישת\s+(?:דירה|בית|נכס)|בנייה\s+עצמית|דיור\s+לרכישה/i.test(normalized))return 'housing';
+  return '';
+}
+function calculateCurrentPurposeShares(routes){
+  const totals={housing:0,allPurpose:0};
+  routes.forEach(route=>{
+    const purpose=route.loanPurpose||'housing';
+    totals[purpose]=(totals[purpose]||0)+num(route.amount);
+  });
+  const total=totals.housing+totals.allPurpose;
+  return total?{housing:totals.housing/total,allPurpose:totals.allPurpose/total}:{housing:1,allPurpose:0};
+}
+function splitRoutesByLoanPurpose(routes){
+  const shares=state.currentPurposeShares||{housing:1,allPurpose:0};
+  if(shares.housing<=0||shares.allPurpose<=0)return routes.map(route=>({...route,loanPurpose:shares.allPurpose>0?'allPurpose':'housing'}));
+  return routes.flatMap(route=>[
+    {...route,sharePct:num(route.sharePct)*shares.housing,loanPurpose:'housing'},
+    {...route,sharePct:num(route.sharePct)*shares.allPurpose,loanPurpose:'allPurpose'}
+  ]).filter(route=>num(route.sharePct)>.001).slice(0,10);
+}
+function setMixCalculatorValue(key,value){
+  state.financial[key]=value===''?'':num(value);
+  state.mixCalcStatus={};
+  renderFinancial();
+  recalc();
+}
+
+/* ===================== ייבוא דוח יתרות ===================== */
+let pendingImportRoutes=[],pendingImportPurpose='housing';
+function reportNumber(value){
+  if(value==null)return 0;
+  const cleaned=String(value).replace(/[₪,%\s]/g,'').replace(/,/g,'');
+  return num(cleaned);
+}
+function reportDateYears(value){
+  const m=String(value||'').match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+  if(!m)return 0;
+  const year=Number(m[3])<100?2000+Number(m[3]):Number(m[3]);
+  const end=new Date(year,Number(m[2])-1,Number(m[1]));
+  return Math.max(0,(end-Date.now())/(365.25*86400000));
+}
+function detectReportKind(text){
+  if(/פריים/i.test(text))return 'prime';
+  if(/משתנ/i.test(text))return 'variable';
+  return 'fixed';
+}
+function detectChangeMonths(text){
+  const months=String(text).match(/(?:כל|משתנה)\s*(\d+(?:\.\d+)?)\s*(?:חודש|חודשים)/i);
+  if(months)return Math.round(reportNumber(months[1]));
+  const years=String(text).match(/(?:כל|משתנה)\s*(\d+(?:\.\d+)?)\s*(?:שנה|שנים)/i);
+  return years?Math.round(reportNumber(years[1])*12):'';
+}
+function routeFromReportData(data={}){
+  const raw=Object.values(data).join(' ');
+  const kind=data.kind||detectReportKind(raw);
+  const rate=reportNumber(data.rate??data.interest??data.anchor??data['ריבית']??data['שיעור ריבית']);
+  const marginRaw=reportNumber(data.margin??data['מרווח']);
+  const years=reportNumber(data.years??data['שנים נותרו']??data['תקופה נותרת'])||reportNumber(data.months??data['חודשים נותרו'])/12||reportDateYears(data.endDate??data['תאריך סיום'])||20;
+  const rt=Object.assign(blankRoute(),{
+    kind,
+    amount:reportNumber(data.amount??data.balance??data['יתרה לסילוק']??data['יתרת קרן']??data['סכום לסילוק']),
+    years:Math.min(30,Math.max(kind==='variable'?6:4,years)),
+    rateType:kind==='fixed'?'קבועה':'משתנה',
+    changeMonths:kind==='prime'?1:(reportNumber(data.changeMonths??data['שינוי בחודשים'])||detectChangeMonths(raw)||60),
+    indexType:/צמוד/i.test(raw)&&!/לא\s*צמוד/i.test(raw)?'מדד':'ללא',
+    indexPct:/צמוד/i.test(raw)&&!/לא\s*צמוד/i.test(raw)?1:0,
+    anchorType:kind==='prime'?'פריים':(data.anchorType||''),
+    anchor:rate>1?rate/100:rate,
+    margin:Math.abs(marginRaw)>1?marginRaw/100:marginRaw,
+    useGeneralRate:false,
+    sharePct:''
+  });
+  applyRouteKind(rt,kind);
+  rt.anchor=rate>1?rate/100:rate;
+  return rt;
+}
+function normalizeHeader(value){
+  return String(value||'').replace(/["']/g,'').replace(/\s+/g,' ').trim();
+}
+function parseDelimitedReport(text){
+  const lines=String(text).split(/\r?\n/).filter(x=>x.trim());
+  if(lines.length<2)return [];
+  const delimiter=(lines[0].match(/;/g)||[]).length>(lines[0].match(/,/g)||[]).length?';':',';
+  const headers=lines[0].split(delimiter).map(normalizeHeader);
+  return lines.slice(1).map(line=>{
+    const values=line.split(delimiter).map(normalizeHeader),obj={};
+    headers.forEach((h,i)=>obj[h]=values[i]??'');
+    const aliases={
+      amount:['יתרה לסילוק','יתרת קרן','סכום לסילוק','יתרה','סכום'],
+      rate:['ריבית','שיעור ריבית','אחוז ריבית'],
+      years:['שנים נותרו','תקופה נותרת','תקופה בשנים'],
+      months:['חודשים נותרו','תקופה בחודשים'],
+      changeMonths:['שינוי בחודשים','תדירות שינוי'],
+      endDate:['תאריך סיום','מועד סיום'],
+      margin:['מרווח']
+    };
+    Object.entries(aliases).forEach(([key,names])=>{const found=headers.find(h=>names.some(n=>h.includes(n)));if(found)obj[key]=obj[found];});
+    return routeFromReportData(obj);
+  }).filter(r=>r.amount>0);
+}
+function parseReportText(text){
+  if(/[,;]/.test(String(text).split(/\r?\n/)[0]||''))return parseDelimitedReport(text);
+  const lines=String(text).split(/\r?\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+  const chunks=[];
+  lines.forEach((line,i)=>{if(/קבוע|משתנ|פריים/i.test(line))chunks.push(lines.slice(Math.max(0,i-1),Math.min(lines.length,i+3)).join(' '));});
+  return chunks.map(chunk=>{
+    const percentages=[...chunk.matchAll(/(\d+(?:[.,]\d+)?)\s*%/g)].map(m=>reportNumber(m[1]));
+    const labeled=chunk.match(/(?:יתרה(?:\s+לסילוק|\s+נותרה)?|קרן|סכום(?:\s+לסילוק)?)\D{0,20}([\d,]{4,})/i);
+    const large=[...chunk.matchAll(/[\d,]{4,}/g)].map(m=>reportNumber(m[0])).filter(x=>x>1000);
+    return routeFromReportData({
+      description:chunk,
+      amount:labeled?reportNumber(labeled[1]):Math.max(0,...large),
+      rate:percentages[0]||0,
+      years:(chunk.match(/(\d+(?:\.\d+)?)\s*(?:שנים|שנה)(?!\s*(?:שינוי|קפיצה))/i)||[])[1],
+      changeMonths:detectChangeMonths(chunk)
+    });
+}).filter((r,i,arr)=>r.amount>0&&arr.findIndex(x=>x.amount===r.amount&&x.kind===r.kind)===i).slice(0,10);
+}
+function parseHapoalimReport(pages){
+  const allText=pages.map(p=>p.lines.join('\n')).join('\n');
+  if(!/בנק הפועלים|משכן בנק הפועלים/.test(allText))return [];
+  const balances={};
+  (pages[0]?.lines||[]).forEach(line=>{
+    const loan=(line.match(/\d{2}\/\d{2}\/\d{6}\/\d{3}/)||[])[0];
+    if(!loan||/סה"כ/.test(line))return;
+    const before=line.slice(0,line.indexOf(loan));
+    const values=(before.match(/\d[\d,]*\.\d{2}-?/g)||[]).map(reportNumber);
+    if(values.length>=9){
+      balances[loan]={
+        payment:values[0],
+        payoff:values[1],
+        exitFee:values[2],
+        principalIndexation:values[values.length-2],
+        principal:values[values.length-1],
+        balance:values[values.length-2]+values[values.length-1]
+      };
+    }else if(values.length>=2)balances[loan]={payment:values[0],balance:values[1],exitFee:0};
+  });
+  const components=[];
+  pages.slice(2,7).forEach(page=>{
+    const loans=page.items.filter(x=>x.y>500&&/\d{2}\/\d{2}\/\d{6}\/\d{3}/.test(x.str))
+      .map(x=>({loan:(x.str.match(/\d{2}\/\d{2}\/\d{6}\/\d{3}/)||[])[0],center:x.x+x.width/2}))
+      .sort((a,b)=>a.center-b.center);
+    if(!loans.length)return;
+    const owned=loans.map(()=>[]);
+    page.items.forEach(item=>{
+      const center=item.x+item.width/2;
+      let best=0,dist=Infinity;
+      loans.forEach((loan,i)=>{const d=Math.abs(center-loan.center);if(d<dist){dist=d;best=i;}});
+      if(dist<95)owned[best].push(item);
+    });
+    const row=(items,y,tolerance=3)=>items.filter(x=>Math.abs(x.y-y)<=tolerance&&String(x.str).trim())
+      .sort((a,b)=>a.x-b.x).map(x=>String(x.str).trim()).join(' ').trim();
+    loans.forEach((loan,i)=>{
+      const items=owned[i],basis=row(items,309,3);
+      const marginMatch=basis.match(/([+-])\s*(\d+(?:\.\d+)?)\s*%/);
+      const margin=marginMatch?(marginMatch[1]==='-'?-1:1)*reportNumber(marginMatch[2]):0;
+      const rateType=row(items,335,3);
+      const nominal=reportNumber(row(items,283,3));
+      const indexText=row(items,170,4);
+      const change=reportNumber(row(items,216,3));
+      const original=reportNumber(row(items,477,3));
+      const purposeText=row(items,499,4);
+      const loanPurpose=classifyLoanPurpose(purposeText)||'housing';
+      const endDate=(row(items,409,3).match(/\d{1,2}\/\d{1,2}\/\d{4}/)||[])[0]||'';
+      const component=(row(items,519,3).match(/\d{3}/)||[])[0]||'';
+      if(!original||!nominal||!endDate)return;
+      const kind=/קבוע/.test(rateType)?'fixed':(/^P\b/i.test(basis)?'prime':'variable');
+      components.push({
+        loan:loan.loan,component,original,nominal,margin,
+        years:reportDateYears(endDate),kind,
+        changeMonths:kind==='prime'?1:(change||60),
+        indexType:/מדד המחירים/.test(indexText)?'מדד':'ללא',
+        basis:/^([A-Z])/i.test(basis)?basis.match(/^([A-Z])/i)[1].toUpperCase():'',
+        loanPurpose,purposeText
+      });
+    });
+  });
+  if(!components.length)return [];
+  Object.entries(balances).forEach(([loan,info])=>{
+    const matches=components.filter(c=>c.loan===loan&&c.years>0.04);
+    const originalTotal=matches.reduce((s,c)=>s+c.original,0);
+    matches.forEach(c=>{
+      const ratio=originalTotal?c.original/originalTotal:0;
+      c.amount=info.balance*ratio;
+      c.exitFee=num(info.exitFee)*ratio;
+    });
+  });
+  const grouped=new Map();
+  components.filter(c=>c.amount>0).forEach(c=>{
+    const key=c.kind==='fixed'
+      ?[c.loanPurpose,c.kind,c.indexType,c.nominal.toFixed(3)].join('|')
+      :[c.loanPurpose,c.kind,c.indexType,c.changeMonths,c.basis,c.margin.toFixed(3)].join('|');
+    if(!grouped.has(key))grouped.set(key,{...c,amount:0,exitFee:0,weightedRate:0,weightedYears:0});
+    const g=grouped.get(key);
+    g.amount+=c.amount;g.exitFee+=num(c.exitFee);g.weightedRate+=c.nominal*c.amount;g.weightedYears+=c.years*c.amount;
+  });
+  return [...grouped.values()].map(g=>{
+    const currentRate=g.weightedRate/g.amount;
+    const years=g.weightedYears/g.amount;
+    const rt=Object.assign(blankRoute(),{
+      kind:g.kind,amount:Math.round(g.amount*100)/100,
+      years:Math.min(30,Math.max(g.kind==='variable'?6:4,Math.round(years*12)/12)),
+      rateType:g.kind==='fixed'?'קבועה':'משתנה',
+      changeMonths:g.kind==='prime'?1:g.changeMonths,
+      indexType:g.indexType,indexPct:g.indexType==='מדד'?1:0,
+      anchorType:g.kind==='prime'?'פריים':(g.basis==='V'?'אג"ח':''),
+      anchor:(currentRate-g.margin)/100,margin:g.margin/100,
+      useGeneralRate:false,sharePct:'',loanPurpose:g.loanPurpose,exitFee:Math.round(g.exitFee*100)/100
+    });
+    applyRouteKind(rt,g.kind);
+    rt.anchor=(currentRate-g.margin)/100;rt.margin=g.margin/100;
+    return rt;
+  }).sort((a,b)=>b.amount-a.amount).slice(0,10);
+}
+function parseMizrahiReport(pages){
+  const allText=pages.map(p=>p.lines.join('\n')).join('\n');
+  if(!/מזרחי[\s-]*טפחות|טפחות/.test(allText)||!/נתונים לסילוק/.test(allText))return [];
+  const parts=[];
+  pages.forEach(page=>{
+    const text=page.lines.join('\n').replace(/[ \t]+/g,' ');
+    if(!/שם החלק בהלוואה/.test(text)||!/סכום הסילוק/.test(text))return;
+    const description=(page.lines.find(line=>
+      /(ריבית קבועה|ריבית משתנה|משתנה צמודה|בסיס הפריים)/.test(line)&&
+      !/(סוג הריבית|שיעור|ריבית ממוצעת|הלוואות בריבית)/.test(line)
+    )||'').trim();
+    const payoffBlock=(text.match(/סכום הסילוק[\s\S]{0,130}/)||[])[0]||'';
+    const payoffValues=(payoffBlock.match(/\d[\d,]*\.\d{2}/g)||[]).map(reportNumber).filter(x=>x>1000);
+    const amount=payoffValues[0]||0;
+    const endDate=(text.match(/(\d{2}\s*\/\s*\d{2}\s*\/\s*\d{4})\s+תאריך סיום חלק זה/)||[])[1]?.replace(/\s/g,'')||'';
+    const fixedRate=reportNumber((text.match(/(\d+(?:\.\d+)?)\s*%\s*שיעור הריבית בחלק זה/)||[])[1]);
+    const rateLine=(text.match(/([\d.]+)\s*%\s*([\d.]+)\s*%\s*\n?שיעור הריבית:/)||[]);
+    const currentRate=fixedRate||reportNumber(rateLine[2])||reportNumber(rateLine[1]);
+    const marginLine=(text.match(/([+-])\s*(\d+(?:\.\d+)?)\s*%\s*([+-])\s*(\d+(?:\.\d+)?)\s*%\s*\n?שיעור התוספת לעוגן/)||[]);
+    const margin=marginLine.length?(marginLine[3]==='-'?-1:1)*reportNumber(marginLine[4]):0;
+    const change=reportNumber((text.match(/תדירות שינוי הריבית:\s*\n?(\d+)\s*חודשים/)||[])[1])
+      ||reportNumber((text.match(/(\d+)\s*חודשים\s*\n?\*{0,2}\s*מועד שינוי/)||[])[1]);
+    const isPrime=/פריים/.test(description)||/פריים סוג הריבית/.test(text);
+    const isFixed=/קבועה/.test(description)||/קבועה סוג הריבית/.test(text);
+    const kind=isPrime?'prime':(isFixed?'fixed':'variable');
+    if(!amount||!currentRate||!endDate)return;
+    parts.push({
+      amount,currentRate,margin,kind,endDate,
+      years:reportDateYears(endDate),
+      changeMonths:kind==='prime'?1:(change||60),
+      indexType:(/צמוד(?:ה)?(?:\s+ל)?מדד|צמוד מדד/.test(description)||/צמוד מדד\s+סוג ההצמדה/.test(text)||/משתנה צמודה/.test(description))&&!/לא צמוד/.test(description)?'מדד':'ללא',
+      anchorType:kind==='prime'?'פריים':(kind==='variable'?'אג"ח':'')
+    });
+  });
+  if(!parts.length)return [];
+  const grouped=new Map();
+  parts.forEach(part=>{
+    const key=[part.kind,part.indexType,part.changeMonths,part.currentRate.toFixed(4),part.margin.toFixed(4),part.endDate].join('|');
+    if(!grouped.has(key))grouped.set(key,{...part,amount:0,weightedYears:0});
+    const group=grouped.get(key);
+    group.amount+=part.amount;group.weightedYears+=part.years*part.amount;
+  });
+  const routes=[...grouped.values()].map(group=>{
+    const years=group.weightedYears/group.amount;
+    const rt=Object.assign(blankRoute(),{
+      kind:group.kind,amount:Math.round(group.amount*100)/100,
+      years:Math.min(30,Math.max(group.kind==='variable'?6:4,Math.round(years*12)/12)),
+      rateType:group.kind==='fixed'?'קבועה':'משתנה',
+      changeMonths:group.kind==='prime'?1:group.changeMonths,
+      indexType:group.indexType,indexPct:group.indexType==='מדד'?1:0,
+      anchorType:group.anchorType,
+      anchor:(group.currentRate-group.margin)/100,margin:group.margin/100,
+      useGeneralRate:false,sharePct:''
+    });
+    applyRouteKind(rt,group.kind);
+    rt.anchor=(group.currentRate-group.margin)/100;rt.margin=group.margin/100;
+    return rt;
+  }).sort((a,b)=>b.amount-a.amount);
+  const statedTotal=reportNumber((allText.match(/ש"ח\s*([\d,]+\.\d{2})\s*:\s*\n?סה"כ לסילוק/)||[])[1])
+    ||reportNumber((allText.match(/סה"כ לסילוק[\s\S]{0,45}?([\d,]+\.\d{2})/)||[])[1]);
+  const routeTotal=routes.reduce((s,r)=>s+num(r.amount),0);
+  if(statedTotal>routeTotal&&routes.length&&statedTotal-routeTotal<1000)routes[0].amount+=statedTotal-routeTotal;
+  return routes.slice(0,10);
+}
+function parseDiscountReport(pages){
+  const allText=pages.map(p=>p.lines.join('\n')).join('\n');
+  if(!/דיסקונט/.test(allText)||!/פרטי משכנתא כולל יתרה לסילוק/.test(allText))return [];
+  const loanPattern=/\d-\d{3}-\d{4}-\d{2}-\d{6}/g;
+  const matches=[...allText.matchAll(loanPattern)],parts=[];
+  matches.forEach((match,i)=>{
+    const block=allText.slice(match.index,matches[i+1]?.index??allText.length);
+    const rateType=((block.match(/\|\s*([^\n|]+)\s+ריבית סוג/)||[])[1]||'').trim();
+    const months=reportNumber((block.match(/(\d+)\s+יתרת\s+תקופה\s+בחודשים/)||[])[1]);
+    const amount=reportNumber((block.match(/([\d,]+\.\d{2})\s+יתרה\s+לסילוק\s+סה"כ/)||[])[1]);
+    const annualRate=reportNumber((block.match(/(-?\d+(?:\.\d+)?)\s+שנתית\s+ריבית\s+שיעור/)||[])[1]);
+    const currentAnchor=reportNumber((block.match(/(-?\d+(?:\.\d+)?)\s+בסיס\)עוגן\(עדכנית\s+ריבית/)||[])[1]);
+    const margin=reportNumber((block.match(/(-?\d+(?:\.\d+)?)\s+תוספת\/הפחתה\s+שיעור/)||[])[1]);
+    const changeMonths=reportNumber((block.match(/(\d+)\s+ריבית\s+שינוי\s+תדירות/)||[])[1]);
+    const prime=/פריים ריבית לקביעת בסיס|פריים/.test(block);
+    const kind=prime?'prime':(/קבועה/.test(rateType)?'fixed':'variable');
+    if(!amount||!months||!annualRate)return;
+    parts.push({
+      amount,years:months/12,annualRate,margin,kind,
+      changeMonths:kind==='prime'?1:(changeMonths||60),
+      indexType:/צמוד מדד/.test(rateType)&&!/לא צמוד/.test(rateType)?'מדד':'ללא',
+      anchorType:kind==='prime'?'פריים':(kind==='variable'?'אג"ח':''),
+      anchor:kind==='fixed'?annualRate:(currentAnchor||annualRate-margin)
+    });
+  });
+  const routes=parts.map(part=>{
+    const rt=Object.assign(blankRoute(),{
+      kind:part.kind,amount:part.amount,
+      years:Math.min(30,Math.max(part.kind==='variable'?6:4,Math.round(part.years*12)/12)),
+      rateType:part.kind==='fixed'?'קבועה':'משתנה',
+      changeMonths:part.changeMonths,indexType:part.indexType,
+      indexPct:part.indexType==='מדד'?1:0,anchorType:part.anchorType,
+      anchor:part.anchor/100,margin:part.kind==='fixed'?0:part.margin/100,
+      useGeneralRate:false,sharePct:''
+    });
+    applyRouteKind(rt,part.kind);
+    rt.anchor=part.anchor/100;rt.margin=part.kind==='fixed'?0:part.margin/100;
+    return rt;
+  });
+  const statedTotal=reportNumber((allText.match(/([\d,]+\.\d{2})\s+לסילוק:\s*יתרה\s+סה"כ/)||[])[1]);
+  const routeTotal=routes.reduce((s,r)=>s+num(r.amount),0);
+  if(statedTotal>routeTotal&&routes.length&&statedTotal-routeTotal<500)routes[0].amount+=statedTotal-routeTotal;
+  return routes.sort((a,b)=>b.amount-a.amount).slice(0,10);
+}
+function parseLeumiReport(pages){
+  const allText=pages.map(p=>p.lines.join('\n')).join('\n');
+  if(!/לאומי למשכנתאות/.test(allText)||!/פירוט יתרות ועמלות פירעון מוקדם/.test(allText))return [];
+  const page=pages.find(p=>p.lines.some(line=>/מספר משנה/.test(line))&&p.lines.some(line=>/סה"כ יתרה לסילוק/.test(line)));
+  if(!page)return [];
+  const centers=[614,478,344,214];
+  const valueAt=(center,y,tolerance=4)=>{
+    const candidates=page.items.filter(item=>Math.abs(item.y-y)<=tolerance&&Math.abs(item.x+item.width/2-center)<75&&String(item.str).trim());
+    return candidates.sort((a,b)=>Math.abs((a.x+a.width/2)-center)-Math.abs((b.x+b.width/2)-center)).map(x=>String(x.str).trim()).join(' ');
+  };
+  const routes=centers.map(center=>{
+    const amount=reportNumber(valueAt(center,34));
+    const endDate=(valueAt(center,451).match(/\d{2}\/\d{2}\/\d{4}/)||[])[0]||'';
+    const annualRate=reportNumber(valueAt(center,427));
+    const rateType=valueAt(center,368);
+    const basis=valueAt(center,403,5);
+    const basisDetail=valueAt(center,301,5);
+    const changeMonths=reportNumber(valueAt(center,288));
+    const isPrime=/פריי|פריים/.test(basis)||/פריי|פריים/.test(basisDetail);
+    const kind=isPrime?'prime':(/קבוע/.test(rateType)?'fixed':'variable');
+    const marginMatch=basisDetail.match(/([+-])\s*(\d+(?:\.\d+)?)\s*%/);
+    const margin=marginMatch?(marginMatch[1]==='-'?-1:1)*reportNumber(marginMatch[2]):0;
+    const indexType=/מדד/.test(basis)?'מדד':'ללא';
+    if(!amount||!endDate||!annualRate)return null;
+    const rt=Object.assign(blankRoute(),{
+      kind,amount,years:Math.min(30,Math.max(kind==='variable'?6:4,Math.round(reportDateYears(endDate)*12)/12)),
+      rateType:kind==='fixed'?'קבועה':'משתנה',
+      changeMonths:kind==='prime'?1:(changeMonths||60),
+      indexType,indexPct:indexType==='מדד'?1:0,
+      anchorType:kind==='prime'?'פריים':(kind==='variable'?'אג"ח':''),
+      anchor:(annualRate-margin)/100,margin:kind==='fixed'?0:margin/100,
+      useGeneralRate:false,sharePct:''
+    });
+    applyRouteKind(rt,kind);
+    rt.anchor=(annualRate-margin)/100;rt.margin=kind==='fixed'?0:margin/100;
+    return rt;
+  }).filter(Boolean);
+  return routes.sort((a,b)=>b.amount-a.amount).slice(0,10);
+}
+function parseFibiReport(pages){
+  const allText=pages.map(p=>p.lines.join('\n')).join('\n');
+  if(!/הבנק הבינלאומי|הבינלאומי/.test(allText)||!/אישור פרטי/.test(allText))return [];
+  const marker=/מספר_הלוואה[^\n]*מספר_משנה[^\n]*/g;
+  const matches=[...allText.matchAll(marker)],parts=[];
+  matches.forEach((match,i)=>{
+    const block=allText.slice(match.index,matches[i+1]?.index??allText.length);
+    const header=match[0];
+    const loanNumber=(header.match(/מספר_הלוואה\.{2,}:\s*([\d-]+)/)||[])[1]||'';
+    const subNumber=(header.match(/מספר_משנה\.{2,}:\s*(\d+)/)||[])[1]||'';
+    const endDate=(block.match(/(\d{2}\/\d{2}\/\d{4})[^\n]*ת\.סיום\/סילוק/)||[])[1]||'';
+    const boardLine=(block.split('\n').find(line=>/פרעון\s+שיטת/.test(line))||'');
+    const board=/שפיצר/.test(boardLine)?'שפיצר':(/קרן\s+שווה/.test(boardLine)?'קרן שווה':'שפיצר');
+    const rateType=(block.split('\n').find(line=>/ריבית\.{3,}\s*:/.test(line))||'').trim();
+    const indexLine=(block.split('\n').find(line=>/סוג הצמדה/.test(line))||'').trim();
+    const balanceMatch=block.match(/([\d,]+\.\d{2})\s+:\.{2}\(\*\*\)יתרת משנה|יתרת משנה\)\*\*\(\.{2}:\s*([\d,]+\.\d{2})/);
+    const amount=reportNumber(balanceMatch?.[1]||balanceMatch?.[2]);
+    const currentRateLine=block.split('\n').find(line=>/נוכחית\s+ריבית\s+נוכחית/.test(line))||'';
+    const annualRate=reportNumber((currentRateLine.match(/:\s*%\s*(\d+(?:\.\d+)?)/)||[])[1]);
+    const marginMatch=block.match(/(\d+(?:\.\d+)?)(-?)\s*%\s+שיעור התוספת\/הפחתה/);
+    const margin=marginMatch?(marginMatch[2]==='-'?-1:1)*reportNumber(marginMatch[1]):0;
+    const changeMonths=reportNumber((block.match(/חודשים\s+(\d+)\s+שינוי הריבית/)||[])[1]);
+    const isPrime=/פריים/.test(rateType);
+    const kind=isPrime?'prime':(/קבועה/.test(rateType)?'fixed':'variable');
+    const indexType=/למדד\s+צמוד|המחירים\s+למדד\s+צמוד/.test(indexLine)?'מדד':'ללא';
+    if(!amount||!endDate||!annualRate)return;
+    const purposeLine=(block.split('\n').find(line=>/מטרת\s+ההלוואה|הלוואה\s+לדיור/.test(line))||'');
+    const loanPurpose=classifyLoanPurpose(purposeLine)||classifyLoanPurpose(block)||'housing';
+    parts.push({loanNumber,subNumber,amount,endDate,annualRate,margin,changeMonths,kind,indexType,board,loanPurpose});
+  });
+  return parts.map(part=>{
+    const rt=Object.assign(blankRoute(),{
+      kind:part.kind,amount:Math.round(part.amount*100)/100,
+      years:Math.min(30,Math.max(part.kind==='variable'?6:4,Math.round(reportDateYears(part.endDate)*12)/12)),
+      board:part.board,
+      rateType:part.kind==='fixed'?'קבועה':'משתנה',
+      changeMonths:part.kind==='prime'?1:(part.changeMonths||60),
+      indexType:part.indexType,indexPct:part.indexType==='מדד'?1:0,
+      anchorType:part.kind==='prime'?'פריים':(part.kind==='variable'?'אג"ח':''),
+      anchor:(part.annualRate-part.margin)/100,margin:part.kind==='fixed'?0:part.margin/100,
+      useGeneralRate:false,sharePct:'',
+      reportLoanNumber:part.loanNumber,reportSubNumber:part.subNumber,loanPurpose:part.loanPurpose
+    });
+    applyRouteKind(rt,part.kind);
+    rt.anchor=(part.annualRate-part.margin)/100;rt.margin=part.kind==='fixed'?0:part.margin/100;
+    return rt;
+  }).sort((a,b)=>b.amount-a.amount).slice(0,10);
+}
+async function extractPdfReport(file){
+  if(typeof pdfjsLib==='undefined')throw new Error('רכיב קריאת PDF לא נטען. ניתן להמיר את הדוח ל־CSV או TXT.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='./document-worker.js';
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const lines=[],pages=[];
+  for(let p=1;p<=pdf.numPages;p++){
+    const page=await pdf.getPage(p),content=await page.getTextContent(),groups={};
+    const pageItems=content.items.map(item=>({str:item.str,x:item.transform[4],y:item.transform[5],width:item.width||0}));
+    content.items.forEach(item=>{const y=Math.round(item.transform[5]/3)*3;(groups[y]||(groups[y]=[])).push(item);});
+    const pageLines=[];
+    Object.keys(groups).sort((a,b)=>b-a).forEach(y=>{
+      const items=groups[y].sort((a,b)=>a.transform[4]-b.transform[4]);
+      const line=items.map(x=>x.str).join(' ');
+      lines.push(line);pageLines.push(line);
+    });
+    pages.push({items:pageItems,lines:pageLines});
+  }
+  const reportText=lines.join('\n');
+  const reportPurpose=classifyLoanPurpose(reportText);
+  pendingImportPurpose=reportPurpose||'housing';
+  const fibi=parseFibiReport(pages);
+    if(fibi.length)return fibi;
+  const leumi=parseLeumiReport(pages);
+  if(leumi.length)return leumi;
+  const discount=parseDiscountReport(pages);
+  if(discount.length)return discount;
+  const mizrahi=parseMizrahiReport(pages);
+  if(mizrahi.length)return mizrahi;
+  const hapoalim=parseHapoalimReport(pages);
+  if(hapoalim.length)return hapoalim;
+  return parseReportText(lines.join('\n'));
+}
+async function handleMortgageReport(event){
+  const file=event.target.files?.[0];event.target.value='';if(!file)return;
+  await importMortgageReportFile(file);
+}
+async function importMortgageReportFile(file){
+  try{
+    let routes=[],ext=(file.name.split('.').pop()||'').toLowerCase();
+    pendingImportPurpose='housing';
+    if(!['pdf','csv','txt','json'].includes(ext))throw new Error('סוג הקובץ אינו נתמך. יש להעלות PDF, CSV, TXT או JSON.');
+    if(ext==='pdf')routes=await extractPdfReport(file);
+    else if(ext==='json'){
+      const parsed=JSON.parse(await file.text());
+      const source=Array.isArray(parsed)?parsed:(parsed.routes||parsed.mixes?.current||[]);
+      routes=source.map(routeFromReportData);
+    }else routes=parseReportText(await file.text());
+    if(!routes.length)routes=[blankRoute()];
+    routes.forEach(route=>{if(!route.loanPurpose)route.loanPurpose=pendingImportPurpose;});
+    const purposes=new Set(routes.map(route=>route.loanPurpose).filter(Boolean));
+    if(purposes.size>1)pendingImportPurpose='mixed';
+    pendingImportRoutes=routes.slice(0,10);
+    renderMortgageImportPreview(file.name,routes.length===1&&routes[0].amount===0?'לא זוהו מסלולים אוטומטית. ניתן להזין אותם ידנית.':'');
+  }catch(error){alert('לא ניתן לקרוא את הדוח: '+error.message);}
+}
+function mortgageReportDrag(event,active){
+  event.preventDefault();event.stopPropagation();
+  event.currentTarget.classList.toggle('dragover',active);
+  if(event.dataTransfer)event.dataTransfer.dropEffect='copy';
+}
+function mortgageReportDrop(event){
+  mortgageReportDrag(event,false);
+  const file=event.dataTransfer?.files?.[0];
+  if(file)importMortgageReportFile(file);
+}
+function mortgageReportDropZone(){
+  const zone=el('div',{cls:'reportdrop',title:'גרור לכאן דוח יתרות מהמחשב'});
+  zone.innerHTML='<span class="dropicon">⇩</span><strong>גרור לכאן דוח יתרות מהמחשב</strong><span>או לחץ לבחירת קובץ · PDF, CSV, TXT או JSON</span>';
+  zone.onclick=()=>document.getElementById('mortgageReportFile').click();
+  zone.ondragenter=e=>mortgageReportDrag(e,true);
+  zone.ondragover=e=>mortgageReportDrag(e,true);
+  zone.ondragleave=e=>mortgageReportDrag(e,false);
+  zone.ondrop=mortgageReportDrop;
+  return zone;
+}
+function renderMortgageImportPreview(fileName='',warning=''){
+  const modal=document.getElementById('importMortgageModal'),tbl=document.getElementById('importMortgageTbl');
+  document.getElementById('importMortgageHint').textContent=`${fileName?`קובץ: ${fileName}. `:''}${warning||'בדוק ותקן את הנתונים לפני העדכון.'}`;
+  const purpose=document.getElementById('importMortgagePurpose');
+  if(purpose){
+    if(pendingImportPurpose==='mixed'){
+      if(![...purpose.options].some(option=>option.value==='mixed'))purpose.append(el('option',{value:'mixed'},'מעורב — דיור ונכס קיים'));
+      purpose.value='mixed';
+    }else purpose.value=pendingImportPurpose;
+  }
+  tbl.innerHTML='';
+  const head=el('tr');['#','מטרת הלוואה','סוג','יתרה','שנים נותרו','שינוי כל ח׳','הצמדה','עוגן (%)','מרווח (%)',''].forEach(x=>head.append(el('th',{},x)));tbl.append(el('thead',{},head));
+  const body=el('tbody');
+  pendingImportRoutes.forEach((rt,i)=>{
+    const purposeSelect=sel(rt,'loanPurpose',['housing','allPurpose']);
+    [...purposeSelect.options].forEach(option=>option.textContent=option.value==='allPurpose'?'כל מטרה / נכס קיים':'דיור / רכישה');
+    purposeSelect.onchange=()=>{rt.loanPurpose=purposeSelect.value;const purposes=new Set(pendingImportRoutes.map(route=>route.loanPurpose));pendingImportPurpose=purposes.size>1?'mixed':purposeSelect.value;renderMortgageImportPreview(fileName,warning);};
+    const tr=el('tr');tr.append(el('td',{},String(i+1)),td(purposeSelect),td(routeKindSelect(rt)),td(inp(rt,'amount','number')),td(routeYearsInput(rt)),td(changeMonthsInput(rt)),td(routeIndexSelect(rt)),td(percentInput(rt,'anchor')),td(percentInput(rt,'margin')));
+    const del=el('button',{cls:'iconbtn del'},'✕');del.onclick=()=>{pendingImportRoutes.splice(i,1);renderMortgageImportPreview(fileName,warning);};tr.append(td(del));body.append(tr);
+  });
+  tbl.append(body);modal.classList.add('open');
+}
+function addImportedRoute(){if(pendingImportRoutes.length<10){pendingImportRoutes.push(blankRoute());renderMortgageImportPreview();}}
+function closeMortgageImport(){document.getElementById('importMortgageModal').classList.remove('open');}
+function confirmMortgageImport(){
+  if(!pendingImportRoutes.length)return;
+  const total=pendingImportRoutes.reduce((s,r)=>s+num(r.amount),0);
+  pendingImportRoutes.forEach(r=>r.sharePct=total>0?num(r.amount)/total*100:0);
+  state.mixes.current=pendingImportRoutes.map(r=>({...r}));
+  state.currentMortgagePurpose=pendingImportPurpose;
+  state.currentPurposeShares=calculateCurrentPurposeShares(state.mixes.current);
+  MIX_OPEN.current=true;state.mixCalcStatus.current={ok:true,text:`דוח יתרות יובא: ${pendingImportRoutes.length} מסלולים, יתרה כוללת ${fmtMoney(total)}.`};
+  buildProposalsFromCurrentMortgage();
+  closeMortgageImport();renderMixes();renderSummary();recalc();
+}
+
+function mixSeries(routes,params,maxMonths){
+  const bal=new Array(maxMonths).fill(0), indexBal=new Array(maxMonths).fill(0), pay=new Array(maxMonths).fill(0);
+  routes.forEach(rt=>{
+    const c=calcRoute(rt,params);
+    for(let m=1;m<=c.n && m<=maxMonths;m++){
+      bal[m-1]+=(c.baseL[m]||0);
+      indexBal[m-1]+=(c.indexBal[m]||0);
+      pay[m-1]+=(c.M[m]||0);
+    }
+  });
+  return {bal,indexBal,pay};
+}
+
+/* ===================== מצב נתונים ===================== */
+function blankRoute(){return {kind:'fixed',sharePct:'',amount:'',years:20,board:'שפיצר',balloon:'',balloonMonths:'',
+  rateType:'קבועה',changeMonths:'',indexType:'ללא',indexPct:1,anchorType:'',anchor:'',margin:0};}
+
+const BANKS=['פועלים','מזרחי-טפחות','אוצר החייל','הבינלאומי','דיסקונט','לאומי','אגוד','ירושלים'];
+const BOARDS=['שפיצר','קרן שווה'];
+const BALLOON=['','בלון מלא','בלון חלקי','גרייס מלא','גרייס חלקי'];
+const RATETYPE=['','קבועה','משתנה'];
+const INDEXTYPE=['','ללא','מדד','דולר','אירו'];
+const ANCHOR=['','פריים','פק"מ','אג"ח'];
+const ROUTEKINDS=[['fixed','קבועה'],['variable','משתנה'],['prime','פריים']];
+const MIXKEYS=[['current','משכנתא קיימת'],['t1','שעון 1'],['t2','שעון 2'],['t3','שעון 3'],['t4','שעון 4'],['t5','שעון 5']];
+const CLOCK_TEMPLATES={
+  clock1:{
+    name:'שעון 1',
+    routes:[
+      {kind:'fixed',sharePct:17,indexType:'ללא',yearStep:5,anchor:.0462},
+      {kind:'fixed',sharePct:17,indexType:'מדד',yearStep:5,anchor:.0462},
+      {kind:'variable',sharePct:30,indexType:'ללא',changeMonths:36,yearStep:3,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'variable',sharePct:15,indexType:'מדד',changeMonths:60,yearStep:5,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'prime',sharePct:21,indexType:'ללא',changeMonths:1,yearStep:10,anchorType:'פריים',anchor:.0456,margin:0}
+    ]
+  },
+  clock2:{
+    name:'שעון 2',
+    routes:[
+      {kind:'fixed',sharePct:33,indexType:'ללא',yearStep:5,anchor:.0462},
+      {kind:'fixed',sharePct:0,indexType:'מדד',yearStep:5,anchor:.0462},
+      {kind:'variable',sharePct:30,indexType:'ללא',changeMonths:36,yearStep:3,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'variable',sharePct:0,indexType:'מדד',changeMonths:60,yearStep:5,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'prime',sharePct:37,indexType:'ללא',changeMonths:1,yearStep:10,anchorType:'פריים',anchor:.0456,margin:0}
+    ]
+  },
+  clock3:{
+    name:'שעון 3',
+    routes:[
+      {kind:'fixed',sharePct:35,indexType:'ללא',yearStep:5,anchor:.0462},
+      {kind:'fixed',sharePct:0,indexType:'מדד',yearStep:5,anchor:.0462},
+      {kind:'variable',sharePct:0,indexType:'ללא',changeMonths:36,yearStep:3,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'variable',sharePct:0,indexType:'מדד',changeMonths:60,yearStep:5,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'prime',sharePct:65,indexType:'ללא',changeMonths:1,yearStep:10,anchorType:'פריים',anchor:.0456,margin:0}
+    ]
+  },
+  clock4:{
+    name:'שעון 4',
+    routes:[
+      {kind:'fixed',sharePct:17,indexType:'ללא',yearStep:5,anchor:.0462},
+      {kind:'fixed',sharePct:17,indexType:'מדד',yearStep:5,anchor:.0462},
+      {kind:'variable',sharePct:30,indexType:'ללא',changeMonths:36,yearStep:3,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'variable',sharePct:15,indexType:'מדד',changeMonths:60,yearStep:5,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'prime',sharePct:21,indexType:'ללא',changeMonths:1,yearStep:10,anchorType:'פריים',anchor:.0456,margin:0}
+    ]
+  },
+  clock5:{
+    name:'שעון 5',
+    routes:[
+      {kind:'fixed',sharePct:33,indexType:'ללא',yearStep:5,anchor:.0462},
+      {kind:'fixed',sharePct:0,indexType:'מדד',yearStep:5,anchor:.0462},
+      {kind:'variable',sharePct:0,indexType:'ללא',changeMonths:36,yearStep:3,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'variable',sharePct:0,indexType:'מדד',changeMonths:60,yearStep:5,anchorType:'אג"ח',anchor:.047,margin:0},
+      {kind:'prime',sharePct:67,indexType:'ללא',changeMonths:1,yearStep:10,anchorType:'פריים',anchor:.0456,margin:0}
+    ]
+  }
+};
+function cloneClockTemplates(source=CLOCK_TEMPLATES){
+  const copy=JSON.parse(JSON.stringify(source));
+  Object.values(copy).forEach(template=>template.conditions=Object.assign({shortenFixed:true,linkedFixedFirst:true},template.conditions||{}));
+  return copy;
+}
+function activeClockTemplates(){return state?.clockTemplates||CLOCK_TEMPLATES;}
+
+function buildClockRoute(spec){
+  const rt=Object.assign(blankRoute(),spec);
+  rt.useGeneralRate=true;
+  rt.years=allowedYears(rt)[0];
+  const general=generalRateForRoute(rt,rt.years);
+  rt.anchor=general.anchor;
+  rt.margin=general.margin;
+  rt.indexPct=rt.indexType==='מדד'?1:0;
+  applyRouteKind(rt,rt.kind);
+  return rt;
+}
+function generalRateKey(rt){
+  const kind=inferRouteKind(rt);
+  if(kind==='prime')return 'prime';
+  if(kind==='fixed')return rt.indexType==='מדד'?'fixedLinked':'fixedUnlinked';
+  const months=Math.round(num(rt.changeMonths));
+  const linked=rt.indexType==='מדד';
+  if(months===36)return linked?'variable36Linked':'variable36Unlinked';
+  if(months===60)return linked?'variable60Linked':'variable60Unlinked';
+  if(months===18||months===24)return linked?'variable18_24Linked':'variable18_24Unlinked';
+  return linked?'variable60Linked':'variable60Unlinked';
+}
+function generalRateForRoute(rt,years=num(rt.years)){
+  normalizeGeneralRateBands();
+  const dated=datedRateForRoute(rt,years);
+  if(dated)return dated;
+  const purpose=rt.loanPurpose||(state.currentMortgagePurpose==='allPurpose'?'allPurpose':'housing');
+  const source=purpose==='allPurpose'?state.allPurposeRateBands:state.generalRateBands;
+  const bands=source[generalRateKey(rt)]||[];
+  const exact=bands.find(b=>years>=num(b.from)&&years<=num(b.to));
+  if(exact)return exact;
+  return bands.reduce((best,b)=>Math.abs(years-(num(b.from)+num(b.to))/2)<Math.abs(years-(num(best.from)+num(best.to))/2)?b:best,bands[0]);
+}
+function datedRateForRoute(rt,years=num(rt.years)){
+  if(!rt.takenToday&&!rt.useDatedRate)return null;
+  const rows=(state.datedRateBands||[]).filter(row=>{
+    const purpose=rt.loanPurpose||(state.currentMortgagePurpose==='allPurpose'?'allPurpose':'housing');
+    const samePurpose=!row.purpose||row.purpose==='all'||row.purpose===purpose;
+    return samePurpose&&row.routeKey===generalRateKey(rt)&&years>=num(row.from)&&years<=num(row.to)&&String(row.date||'')<=String(rt.startDateOverride||today());
+  }).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  return rows.length?rows[0]:null;
+}
+function syncRouteGeneralRate(rt){
+  if(!rt.useGeneralRate)return;
+  const rate=generalRateForRoute(rt,rt.years);
+  rt.anchor=rate.anchor;rt.margin=rate.margin;
+}
+function defaultGeneralRates(){
+  return {
+    fixedUnlinked:{anchor:.0462,margin:0},
+    fixedLinked:{anchor:.0462,margin:0},
+    variable36Unlinked:{anchor:.047,margin:0},
+    variable36Linked:{anchor:.047,margin:0},
+    variable60Linked:{anchor:.047,margin:0},
+    variable60Unlinked:{anchor:.047,margin:0},
+    variable18_24Linked:{anchor:.047,margin:0},
+    variable18_24Unlinked:{anchor:.047,margin:0},
+    prime:{anchor:.0456,margin:0}
+  };
+}
+function defaultGeneralRateBands(){
+  const rates=defaultGeneralRates();
+  return Object.fromEntries(Object.entries(rates).map(([key,rate])=>[key,[{from:4,to:30,anchor:rate.anchor,margin:rate.margin}]]));
+}
+function normalizeGeneralRateBands(){
+  if(!state.generalRateBands)state.generalRateBands={};
+  if(!state.allPurposeRateBands)state.allPurposeRateBands={};
+  const defaults=defaultGeneralRateBands();
+  Object.keys(defaults).forEach(key=>{
+    if(!Array.isArray(state.generalRateBands[key])||!state.generalRateBands[key].length){
+      const old=state.generalRates?.[key];
+      state.generalRateBands[key]=[{from:4,to:30,anchor:num(old?.anchor??defaults[key][0].anchor),margin:num(old?.margin??defaults[key][0].margin)}];
+    }
+    state.generalRateBands[key].sort((a,b)=>num(a.from)-num(b.from));
+    if(!Array.isArray(state.allPurposeRateBands[key])||!state.allPurposeRateBands[key].length){
+      state.allPurposeRateBands[key]=state.generalRateBands[key].map(rate=>({...rate}));
+    }
+    state.allPurposeRateBands[key].sort((a,b)=>num(a.from)-num(b.from));
+  });
+}
+function applyGeneralRatesToLoadedMixes(){
+  Object.entries(state.mixes||{}).filter(([key])=>key!=='current').forEach(([,routes])=>routes.forEach(rt=>{
+    rt.useGeneralRate=true;
+    const rate=generalRateForRoute(rt,rt.years);
+    rt.anchor=rate.anchor;
+    rt.margin=rate.margin;
+  }));
+  state.mixCalcStatus={};
+  renderMixes();renderSummary();recalc();
+}
+function loadClockTemplate(templateKey='clock1',targetKey='t1'){
+  const template=activeClockTemplates()[templateKey];
+  if(!template)return;
+  state.mixes[targetKey]=template.routes.filter(route=>num(route.sharePct)>0).map(buildClockRoute);
+  applyMixSettingsToRoutes(targetKey);
+  state.mixCalcStatus[targetKey]={ok:true,text:`תבנית ${template.name} נטענה. האחוזים והמבנה קבועים, וכל השדות עדיין ניתנים לעריכה.`};
+  MIX_OPEN[targetKey]=true;
+}
+function applyAndCalculateClock(){
+  const templateKey=document.getElementById('clockTemplateSelect')?.value||'clock1';
+  const targetKey='t'+templateKey.replace('clock','');
+  loadClockTemplate(templateKey,targetKey);
+  if(currentMortgageBalance()>0)applyCurrentPurposeSplitToRoutes(state.mixes[targetKey]);
+  calculateMixToRange(targetKey);
+  renderMixes();renderSummary();recalc();
+}
+
+let TEMPLATE_EDIT_KEY='clock1',TEMPLATE_DRAFT=null;
+function templateRouteDefault(){
+  return {kind:'fixed',sharePct:0,indexType:'ללא',changeMonths:'',yearStep:1,anchorType:'',anchor:.0462,margin:0};
+}
+function selectTemplateForEdit(key='clock1'){
+  TEMPLATE_EDIT_KEY=key;
+  TEMPLATE_DRAFT=JSON.parse(JSON.stringify(activeClockTemplates()[key]||{name:key,routes:[]}));
+  TEMPLATE_DRAFT.conditions=Object.assign({shortenFixed:true,linkedFixedFirst:true},TEMPLATE_DRAFT.conditions||{});
+  renderTemplateEditor();
+}
+function updateTemplateDraftName(value){if(TEMPLATE_DRAFT)TEMPLATE_DRAFT.name=value;}
+function updateTemplateCondition(key,value){
+  if(!TEMPLATE_DRAFT)return;
+  TEMPLATE_DRAFT.conditions=TEMPLATE_DRAFT.conditions||{};
+  TEMPLATE_DRAFT.conditions[key]=value;
+  if(key==='shortenFixed'){
+    const priority=document.getElementById('templateLinkedFirst');
+    if(priority)priority.disabled=!value;
+  }
+}
+function refreshTemplateSelectors(){
+  ['clockTemplateSelect','templateEditorSelect'].forEach(id=>{
+    const select=document.getElementById(id);if(!select)return;
+    [...select.options].forEach(option=>{option.textContent=activeClockTemplates()[option.value]?.name||option.textContent;});
+  });
+}
+function renderTemplateEditor(){
+  if(!TEMPLATE_DRAFT)selectTemplateForEdit(TEMPLATE_EDIT_KEY);
+  const name=document.getElementById('templateEditorName'),tbl=document.getElementById('templateEditorTbl');
+  if(!name||!tbl)return;
+  name.value=TEMPLATE_DRAFT.name||'';
+  const shorten=document.getElementById('templateShortenFixed'),linked=document.getElementById('templateLinkedFirst');
+  if(shorten)shorten.checked=TEMPLATE_DRAFT.conditions?.shortenFixed!==false;
+  if(linked){linked.checked=TEMPLATE_DRAFT.conditions?.linkedFixedFirst!==false;linked.disabled=TEMPLATE_DRAFT.conditions?.shortenFixed===false;}
+  tbl.innerHTML='';
+  const h=el('tr');
+  ['#','סוג מסלול','אחוז מהתמהיל','הצמדה','שינוי ריבית כל (חודשים)','קפיצת תקופה (שנים)','סוג עוגן',''].forEach(x=>h.append(el('th',{},x)));
+  tbl.append(el('thead',{},h));
+  const body=el('tbody');
+  TEMPLATE_DRAFT.routes.forEach((route,i)=>{
+    const tr=el('tr');tr.append(el('td',{},String(i+1)));
+    const kind=el('select');
+    ROUTEKINDS.forEach(([value,label])=>{const op=el('option',{value},label);if(route.kind===value)op.selected=true;kind.append(op);});
+    kind.onchange=()=>{route.kind=kind.value;if(kind.value==='prime'){route.indexType='ללא';route.changeMonths=1;route.anchorType='פריים';}else if(kind.value==='fixed'){route.changeMonths='';route.anchorType='';}else{route.changeMonths=num(route.changeMonths)||60;route.anchorType=route.anchorType||'אג"ח';}renderTemplateEditor();};
+    const share=inp(route,'sharePct','number','0.01');
+    const index=el('select');
+    ['ללא','מדד'].forEach(value=>{const op=el('option',{value},value);if(route.indexType===value)op.selected=true;index.append(op);});
+    index.disabled=route.kind==='prime';index.onchange=()=>route.indexType=index.value;
+    const change=route.kind==='variable'?inp(route,'changeMonths','number','1'):roIn(route.kind==='prime'?'1':'—');
+    const step=inp(route,'yearStep','number','1');
+    const anchor=route.kind==='variable'?sel(route,'anchorType',['','פק"מ','אג"ח']):roIn(route.kind==='prime'?'פריים':'—');
+    const del=el('button',{cls:'iconbtn del',title:'מחק מסלול'},'✕');
+    del.onclick=()=>{TEMPLATE_DRAFT.routes.splice(i,1);renderTemplateEditor();};
+    tr.append(td(kind),td(share),td(index),td(change),td(step),td(anchor),td(del));body.append(tr);
+  });
+  const total=TEMPLATE_DRAFT.routes.reduce((sum,r)=>sum+num(r.sharePct),0);
+  const totalRow=el('tr',{cls:'totrow'});totalRow.append(el('td',{},'סה״כ'),el('td',{}),el('td',{},total.toFixed(2)+'%'),el('td',{colspan:'5'},total===100?'תקין':'האחוזים צריכים להסתכם ב־100%'));body.append(totalRow);
+  tbl.append(body);
+}
+function addTemplateRoute(){
+  if(!TEMPLATE_DRAFT)selectTemplateForEdit(TEMPLATE_EDIT_KEY);
+  if(TEMPLATE_DRAFT.routes.length>=10)return;
+  TEMPLATE_DRAFT.routes.push(templateRouteDefault());renderTemplateEditor();
+}
+function saveTemplateEditor(){
+  const total=TEMPLATE_DRAFT.routes.reduce((sum,r)=>sum+num(r.sharePct),0);
+  const status=document.getElementById('templateEditorStatus');status.style.display='block';
+  if(!TEMPLATE_DRAFT.routes.length||TEMPLATE_DRAFT.routes.length>10||Math.abs(total-100)>.01){
+    status.className='calcstatus bad';status.textContent='לא ניתן לשמור: נדרשים 1–10 מסלולים וסך אחוזים של 100%.';return;
+  }
+  state.clockTemplates[TEMPLATE_EDIT_KEY]=JSON.parse(JSON.stringify(TEMPLATE_DRAFT));
+  refreshTemplateSelectors();
+  status.className='calcstatus ok';status.textContent='התבנית נשמרה ותשמש בחישובים הבאים.';
+  try{localStorage.setItem('mortgage-mix-simulator',JSON.stringify(state));}catch(e){}
+}
+function resetTemplateEditor(){
+  state.clockTemplates[TEMPLATE_EDIT_KEY]=cloneClockTemplates()[TEMPLATE_EDIT_KEY];
+  refreshTemplateSelectors();
+  selectTemplateForEdit(TEMPLATE_EDIT_KEY);
+  const status=document.getElementById('templateEditorStatus');status.style.display='block';status.className='calcstatus ok';status.textContent='ברירת המחדל שוחזרה.';
+}
+
+function inferRouteKind(rt){
+  if(rt.kind)return rt.kind;
+  if(rt.anchorType==='פריים')return 'prime';
+  return rt.rateType==='משתנה'?'variable':'fixed';
+}
+function applyRouteKind(rt,kind){
+  rt.kind=kind;
+  rt.board='שפיצר';
+  rt.balloon='';rt.balloonMonths='';
+  if(kind==='fixed'){
+    rt.rateType='קבועה';rt.changeMonths='';rt.anchorType='';
+    if(!['ללא','מדד'].includes(rt.indexType))rt.indexType='ללא';
+    rt.years=Math.min(30,Math.max(4,num(rt.years)||20));
+  }else if(kind==='variable'){
+    rt.rateType='משתנה';rt.anchorType=rt.anchorType==='פריים'?'':rt.anchorType;
+    rt.changeMonths=num(rt.changeMonths)||60;
+    if(!['ללא','מדד'].includes(rt.indexType))rt.indexType='ללא';
+    rt.years=nearestAllowedYears(rt,num(rt.years)||20);
+  }else{
+    rt.rateType='משתנה';rt.anchorType='פריים';rt.changeMonths=1;rt.indexType='ללא';rt.indexPct=0;
+    rt.years=Math.min(30,Math.max(4,num(rt.years)||20));
+  }
+  syncRouteGeneralRate(rt);
+}
+function routeKindSelect(rt){
+  const s=el('select');
+  ROUTEKINDS.forEach(([value,label])=>{const op=el('option',{value},label);if(inferRouteKind(rt)===value)op.selected=true;s.append(op);});
+  s.onchange=()=>{applyRouteKind(rt,s.value);renderMixes();recalc();};
+  return s;
+}
+function routeYearsInput(rt){
+  const i=inp(rt,'years','number','0.5');
+  i.setAttribute('min',inferRouteKind(rt)==='variable'?'6':'4');
+  i.setAttribute('max','30');
+  const original=i.onchange;
+  i.onchange=()=>{rt.years=nearestAllowedYears(rt,num(i.value));i.value=rt.years;syncRouteGeneralRate(rt);original();};
+  return i;
+}
+function yearStepInput(rt){
+  const i=inp(rt,'yearStep','number','1');
+  i.setAttribute('min','1');i.setAttribute('max','30');
+  if(!rt.yearStep)i.value='1';
+  const original=i.onchange;
+  i.onchange=()=>{
+    rt.yearStep=Math.max(1,Math.round(num(i.value)||1));
+    if(inferRouteKind(rt)==='variable')rt.changeMonths=rt.yearStep*12;
+    rt.years=nearestAllowedYears(rt,num(rt.years));
+    original();
+  };
+  return i;
+}
+function routeIndexSelect(rt){
+  if(inferRouteKind(rt)==='prime'){rt.indexType='ללא';rt.indexPct=0;return roIn('ללא');}
+  const s=sel(rt,'indexType',['ללא','מדד']);
+  s.onchange=()=>{rt.indexType=s.value;rt.indexPct=s.value==='מדד'?1:0;syncRouteGeneralRate(rt);recalc();};
+  return s;
+}
+function changeMonthsInput(rt){
+  if(inferRouteKind(rt)!=='variable')return roIn(inferRouteKind(rt)==='prime'?'חודשי':'—');
+  const i=inp(rt,'changeMonths','number','1');i.setAttribute('min','1');
+  const original=i.onchange;i.onchange=()=>{rt.changeMonths=Math.max(1,Math.round(num(i.value)));rt.years=nearestAllowedYears(rt,num(rt.years));original();};
+  return i;
+}
+function lastRateUpdateInput(rt){
+  if(inferRouteKind(rt)!=='variable')return roIn('—');
+  return inp(rt,'lastRateUpdateDate','date');
+}
+function routeBoardSelect(rt){
+  return sel(rt,'board',BOARDS);
+}
+function totalAnnualRateInput(rt){
+  const input=el('input',{type:'number',step:'0.01',dir:'ltr',inputmode:'decimal',value:Number(((num(rt.anchor)+num(rt.margin))*100).toFixed(4))});
+  const save=()=>{
+    const total=num(input.value)/100;
+    rt.anchor=total-num(rt.margin);
+    rt.useGeneralRate=false;
+  };
+  input.oninput=save;
+  input.onchange=()=>{save();recalc();};
+  return input;
+}
+function periodMonthsInput(){
+  const f=state.financial;
+  const i=el('input',{type:'number',step:'1',min:'0',dir:'ltr',inputmode:'numeric',autocomplete:'off'});
+  i.value=f.period===''?'':Math.round(num(f.period)*12);
+  const saveValue=()=>{f.period=i.value===''?'':Math.max(0,parseFloat(i.value)||0)/12;};
+  i.oninput=saveValue;
+  i.onchange=()=>{saveValue();renderFinancial();recalc();};
+  return i;
+}
+function routeAnnualIndexInput(rt,c){
+  if(rt.indexType!=='מדד')return roIn('0.00%');
+  const input=el('input',{type:'number',step:'0.01',dir:'ltr',inputmode:'decimal',value:Number((c.annualIndex*100).toFixed(4))});
+  input.oninput=()=>{rt.customAnnualIndex=input.value===''?'':num(input.value)/100;};
+  input.onchange=()=>{recalc();};
+  return input;
+}
+function allowedYears(rt){
+  const kind=inferRouteKind(rt);
+  if(kind!=='variable'){
+    const step=Math.max(1,Math.round(num(rt.yearStep)||1));
+    const first=step>1?Math.max(4,step):4;
+    const out=[];
+    for(let years=first;years<=30;years+=step)out.push(years);
+    return out;
+  }
+  const jump=Math.max(1,Math.round((num(rt.yearStep)||num(rt.changeMonths)/12||5)*12));
+  const out=[];
+  for(let months=72;months<=360;months++)if(months%jump===0)out.push(months/12);
+  return out.length?out:[6,30];
+}
+function nearestAllowedYears(rt,value){
+  const vals=allowedYears(rt);
+  return vals.reduce((best,x)=>Math.abs(x-value)<Math.abs(best-value)?x:best,vals[0]);
+}
+
+let state;
+function today(){const d=new Date();return d.toISOString().slice(0,10);}
+function defaultState(){
+  return {
+    personal:[{tz:'',first:'',last:'',birth:'',gender:'זכר',smoker:'לא',marital:'נשוי',edu:'',income:'',seniority:'',children:''}],
+    financial:{date:today(),type:'משכנתא חדשה',equity:'',loanAmount:'',period:'',minPay:'',maxPayDesired:''},
+    loans:[],
+    flags:{arrears:'לא',checks:'לא',execution:'לא',restricted:'לא',rejected:'לא',emi:'לא'},
+    params:{'ללא':0,'מדד':0.03,'דולר':0.03,'אירו':0.015},
+    indexCalcMode:'annual',
+    monthlyIndices:[],
+    mixCalcStatus:{},
+    generalRates:{
+      fixedUnlinked:{anchor:.0462,margin:0},
+      fixedLinked:{anchor:.0462,margin:0},
+      variable36Unlinked:{anchor:.047,margin:0},
+      variable36Linked:{anchor:.047,margin:0},
+      variable60Linked:{anchor:.047,margin:0},
+      variable60Unlinked:{anchor:.047,margin:0},
+      variable18_24Linked:{anchor:.047,margin:0},
+      variable18_24Unlinked:{anchor:.047,margin:0},
+      prime:{anchor:.0456,margin:0}
+    },
+    generalRateBands:null,
+    allPurposeRateBands:null,
+    datedRateBands:[],
+    currentMortgagePurpose:'housing',
+    currentPurposeShares:{housing:1,allPurpose:0},
+    mixSettings:{},
+    clockTemplates:cloneClockTemplates(),
+    riskRules:defaultRiskRules(),
+    insurance:{borrowerIndex:0,sourceMix:'manual',company:'כלל',amount:'',annualRate:4.5,years:20},
+    insuranceRateOverrides:{},
+    insuranceRateEditorProfile:'male_nonsmoker',
+    buildingInsurance:{structureType:'פרטי',buildingAge:'',insuredAmount:'',previouslyInsured:'לא',hadClaims:'לא',claimsCount:0},
+    currentPolicy:{type:'life',company:'',policyNumber:'',insuredName:'',insuredAmount:'',monthlyPremium:'',startDate:'',endDate:'',structureType:'',fileName:''},
+    prepayment:{mixKey:'current',routeIndex:0,balance:'',annualLoanRate:4.5,annualAverageRate:3.5,remainingMonths:240,monthsToRateChange:240,repaymentPct:100,reductionPct:0},
+    rates:null,
+    mixes:{current:[],t1:[blankRoute()],t2:[blankRoute()],t3:[blankRoute()],t4:[],t5:[]}
+  };
+}
+function exampleState(){
+  const s=defaultState();
+  s.personal=[
+    {tz:'',first:'גיל',last:'',birth:'1985-05-05',gender:'זכר',smoker:'לא',marital:'נשוי',edu:'תואר שני',income:11000,seniority:8,children:2},
+    {tz:'',first:'סתיו',last:'',birth:'1987-03-10',gender:'נקבה',smoker:'לא',marital:'נשוי',edu:'תואר ראשון',income:9000,seniority:6,children:2},
+  ];
+  s.financial={date:today(),type:'משכנתא חדשה',equity:800000,loanAmount:1700000,period:30,minPay:8000,maxPayDesired:10000};
+  const R=(amount,years,rate,extra={})=>Object.assign(blankRoute(),{amount,years,anchor:rate,margin:0,board:'שפיצר',indexType:''},extra);
+  s.mixes.t1=[R(580000,20,0.0462,{kind:'fixed',sharePct:34,rateType:'קבועה'}),R(650000,30,0.047,{kind:'variable',sharePct:38,rateType:'משתנה',changeMonths:60}),R(470000,27,0.0456,{kind:'prime',sharePct:28,rateType:'משתנה',anchorType:'פריים',changeMonths:1,indexType:'ללא'})];
+  s.mixes.t2=[R(850000,24,0.047,{kind:'fixed',sharePct:50,rateType:'קבועה'}),R(500000,30,0.047,{kind:'variable',sharePct:29,rateType:'משתנה',changeMonths:60}),R(350000,27,0.0477,{kind:'prime',sharePct:21,anchorType:'פריים',rateType:'משתנה',changeMonths:1,indexType:'ללא'})];
+  s.mixes.t3=[R(1100000,25,0.047,{kind:'fixed',sharePct:65,rateType:'קבועה'}),R(600000,30,0.047,{kind:'prime',sharePct:35,anchorType:'פריים',rateType:'משתנה',changeMonths:1,indexType:'ללא'})];
+  s.mixes.t4=[]; s.mixes.t5=[]; s.mixes.current=[];
+  return s;
+}
+
+/* ===================== עזרי DOM ===================== */
+function el(t,a={},...kids){const e=document.createElement(t);for(const k in a){if(k==='cls')e.className=a[k];else if(k==='html')e.innerHTML=a[k];else e.setAttribute(k,a[k]);}kids.flat().forEach(k=>e.append(k));return e;}
+function fmt(n){if(!isFinite(n))return'—';return Math.round(n).toLocaleString('he-IL');}
+function fmtMoney(n){return '₪'+fmt(n);}
+function fmtPct(n){return (n*100).toFixed(2)+'%';}
+function td(child){return el('td',{},child);}
+function tdc(text){return el('td',{cls:'calccell'},text);}
+function roIn(v){return el('input',{readonly:'readonly',value:v});}
+function inp(obj,key,type='text',step){
+  const i=el('input',{type:type,dir:'ltr',autocomplete:'off'});
+  i.removeAttribute('maxlength');
+  if(step)i.setAttribute('step',step);
+  if(type==='number')i.setAttribute('inputmode','decimal');
+  if(key==='tz'){i.setAttribute('inputmode','numeric');i.style.minWidth='112px';}
+  i.value=obj[key]??'';
+  const saveValue=()=>{obj[key]=type==='number'?(i.value===''?'':parseFloat(i.value)):i.value;};
+  i.oninput=()=>{saveValue();if(key==='first')updateSimulatorName();};
+  i.onchange=()=>{saveValue();recalc();};
+  return i;
+}
+function percentInput(obj,key,onManualChange){
+  const i=el('input',{type:'number',step:'0.01',dir:'ltr',inputmode:'decimal',autocomplete:'off'});
+  i.value=obj[key]===''?'':Number((num(obj[key])*100).toFixed(4));
+  const saveValue=()=>{obj[key]=i.value===''?'':num(i.value)/100;};
+  i.oninput=()=>{saveValue();if(onManualChange)onManualChange();};
+  i.onchange=()=>{saveValue();recalc();};
+  return i;
+}
+function monthsInput(route){
+  const i=el('input',{type:'number',step:'1',min:'0',dir:'ltr',inputmode:'numeric',autocomplete:'off'});
+  i.value=route.years===''?'':Math.round(num(route.years)*12);
+  const saveValue=()=>{route.years=i.value===''?'':Math.max(0,parseFloat(i.value)||0)/12;};
+  i.oninput=saveValue;
+  i.onchange=()=>{saveValue();recalc();};
+  return i;
+}
+function sel(obj,key,opts){const s=el('select');opts.forEach(o=>{const op=el('option',{value:o},o===''?'—':o);if((obj[key]??'')===o)op.selected=true;s.append(op);});s.onchange=()=>{obj[key]=s.value;recalc();};return s;}
+function field(label,control){const w=el('div',{cls:'f'});w.append(el('label',{},label));w.append(control);return w;}
+
+/* ===================== נתונים אישיים ===================== */
+function ageFrom(d){if(!d)return null;const b=new Date(d);if(isNaN(b))return null;return (Date.now()-b)/(365.25*24*3600*1000);}
+function renderPersonal(){
+  const t=document.getElementById('personalTbl'); t.innerHTML='';
+  const cols=['#','ת.ז','שם פרטי','שם משפחה','תאריך לידה','גיל','מין','מעשן/ת','מצב משפחתי','השכלה','הכנסה חודשית','ותק (שנים)','ילדים',''];
+  const tr=el('tr'); cols.forEach(c=>tr.append(el('th',{},c))); t.append(el('thead',{},tr));
+  const tb=el('tbody');
+  state.personal.forEach((b,i)=>{
+    const row=el('tr');
+    row.append(el('td',{},String(i+1)));
+    row.append(td(inp(b,'tz')));
+    row.append(td(inp(b,'first')));
+    row.append(td(inp(b,'last')));
+    row.append(td(inp(b,'birth','date')));
+    const age=ageFrom(b.birth);
+    row.append(td(roIn(age==null?'':age.toFixed(1))));
+    row.append(td(sel(b,'gender',['זכר','נקבה'])));
+    row.append(td(sel(b,'smoker',['לא','כן'])));
+    row.append(td(sel(b,'marital',['רווק','נשוי','גרוש','אלמן'])));
+    row.append(td(sel(b,'edu',['תיכונית','על תיכונית','סטודנט לתואר ראשון','תואר ראשון','תואר שני','דוקטור','פרופסור'])));
+    row.append(td(inp(b,'income','number')));
+    row.append(td(inp(b,'seniority','number')));
+    row.append(td(inp(b,'children','number')));
+    const del=el('button',{cls:'iconbtn del'},'✕'); del.onclick=()=>{state.personal.splice(i,1);renderPersonal();recalc();};
+    row.append(el('td',{},el('div',{cls:'rowact'},del)));
+    tb.append(row);
+  });
+  t.append(tb);
+  const tot=state.personal.reduce((s,b)=>s+num(b.income),0);
+  document.getElementById('kTotIncome').textContent=fmtMoney(tot);
+  document.getElementById('kBorrowers').textContent=state.personal.length;
+}
+function addBorrower(){state.personal.push({tz:'',first:'',last:'',birth:'',gender:'זכר',smoker:'לא',marital:'נשוי',edu:'',income:'',seniority:'',children:''});renderPersonal();recalc();}
+
+/* ===================== ביטוח חיים למשכנתא ===================== */
+function insuranceRateKey(person){
+  const gender=person?.gender==='נקבה'?'female':'male';
+  const smoking=person?.smoker==='כן'?'smoker':'nonsmoker';
+  return `${gender}_${smoking}`;
+}
+function insuranceCompanies(person){
+  const table=window.INSURANCE_RATES?.[insuranceRateKey(person)]||{};
+  const first=Object.values(table)[0]||{};
+  return Object.keys(first);
+}
+function effectiveInsuranceRate(profile,age,company){
+  const override=state.insuranceRateOverrides?.[profile]?.[String(age)];
+  if(override&&Object.prototype.hasOwnProperty.call(override,company))return num(override[company]);
+  return num(window.INSURANCE_RATES?.[profile]?.[String(age)]?.[company]);
+}
+function ageAtMonth(birth,startDate,month){
+  const b=new Date((birth||'')+'T12:00:00'),d=new Date((startDate||today())+'T12:00:00');
+  if(isNaN(b)||isNaN(d))return null;
+  d.setMonth(d.getMonth()+month-1);
+  let age=d.getFullYear()-b.getFullYear();
+  if(d.getMonth()<b.getMonth()||(d.getMonth()===b.getMonth()&&d.getDate()<b.getDate()))age--;
+  return age;
+}
+function manualInsuranceBalances(amount,annualRate,years){
+  const E=num(amount),n=Math.max(0,Math.round(num(years)*12)),r=Math.max(0,num(annualRate))/1200;
+  if(!E||!n)return [];
+  const payment=-PMT(r,n,E),out=[];let balance=E;
+  for(let m=1;m<=n;m++){
+    out.push(balance);
+    const interest=balance*r,principal=Math.min(balance,payment-interest);
+    balance=Math.max(0,balance-principal);
+  }
+  return out;
+}
+function mixInsuranceBalances(mixKey){
+  const routes=state.mixes?.[mixKey]||[];
+  const per=routes.map(rt=>calcRoute({...rt,board:'שפיצר'},state.params));
+  const maxN=Math.max(0,...per.map(c=>c.n));
+  return Array.from({length:maxN},(_,i)=>per.reduce((sum,c)=>sum+num(c.L[i+1]),0));
+}
+function insuranceBalances(){
+  const cfg=state.insurance;
+  if(cfg.sourceMix!=='manual'&&(state.mixes?.[cfg.sourceMix]||[]).length)return mixInsuranceBalances(cfg.sourceMix);
+  return manualInsuranceBalances(cfg.amount,cfg.annualRate,cfg.years);
+}
+function insuranceProjection(company){
+  const cfg=state.insurance,person=state.personal[cfg.borrowerIndex]||state.personal[0]||{};
+  const rateTable=window.INSURANCE_RATES?.[insuranceRateKey(person)]||{};
+  const balances=insuranceBalances(),rows=[];let total=0,missing=false;
+  balances.forEach((balance,i)=>{
+    const month=i+1,insuranceYear=Math.floor(i/12)+1;
+    const annualStartIndex=(insuranceYear-1)*12;
+    const pricingMonth=annualStartIndex+1;
+    const age=ageAtMonth(person.birth,state.financial?.date,pricingMonth);
+    const insuredAmount=balances[annualStartIndex]||balance;
+    const rate=age==null?null:effectiveInsuranceRate(insuranceRateKey(person),age,company);
+    const premium=rate?insuredAmount/10000*rate:0;
+    if(!rate)missing=true;
+    total+=premium;
+    rows.push({month,insuranceYear,age,balance,insuredAmount,rate,premium,total,isAnnualUpdate:i%12===0});
+  });
+  return {company,rows,total,first:rows[0]?.premium||0,average:rows.length?total/rows.length:0,missing};
+}
+function insurancePolicyDrag(event,active){
+  event.preventDefault();event.stopPropagation();
+  event.currentTarget.classList.toggle('dragover',active);
+  if(event.dataTransfer)event.dataTransfer.dropEffect='copy';
+}
+function insurancePolicyDrop(event){
+  insurancePolicyDrag(event,false);
+  const files=[...(event.dataTransfer?.files||[])];
+  if(files.length)importInsurancePolicyFiles(files);
+}
+async function handleInsurancePolicyFile(event){
+  const files=[...(event.target.files||[])];event.target.value='';if(files.length)await importInsurancePolicyFiles(files);
+}
+function policyDetectedNumber(text,patterns){
+  for(const pattern of patterns){
+    const match=String(text).match(pattern);
+    if(match)return reportNumber(match[1]);
+  }
+  return 0;
+}
+function policyDetectedText(text,patterns){
+  for(const pattern of patterns){
+    const match=String(text).match(pattern);
+    if(match)return String(match[1]||'').replace(/\s+/g,' ').trim();
+  }
+  return '';
+}
+function parseInsurancePolicyText(text,fileName=''){
+  const clean=String(text||'').replace(/\u00a0/g,' ').replace(/[ \t]+/g,' ');
+  const companies=['כלל','מגדל','הפניקס','הראל','מנורה','איילון','הכשרה','שלמה'];
+  const company=companies.find(name=>clean.includes(name))||'';
+  const buildingSignals=/ביטוח\s+מבנה|מבנה\s+למשכנתא|רעידת\s+אדמה|נזקי\s+מים|ערך\s+כינון/i.test(clean);
+  const lifeSignals=/ביטוח\s+חיים|חיי\s+לווים|מוות|סכום\s+ביטוח\s+למקרה\s+מוות/i.test(clean);
+  const type=buildingSignals&&!lifeSignals?'building':'life';
+  const insuredAmount=policyDetectedNumber(clean,[
+    /סכום\s+(?:ה)?ביטוח(?:\s+למקרה\s+מוות|\s+מבנה)?\D{0,35}([\d,]+(?:\.\d{1,2})?)/i,
+    /סכום\s+כינון\D{0,25}([\d,]+(?:\.\d{1,2})?)/i,
+    /גבול\s+אחריות\D{0,25}([\d,]+(?:\.\d{1,2})?)/i
+  ]);
+  const monthlyPremium=policyDetectedNumber(clean,[
+    /פרמיה\s+חודשית\D{0,25}([\d,]+(?:\.\d{1,2})?)/i,
+    /דמי\s+ביטוח\s+חודשיים\D{0,25}([\d,]+(?:\.\d{1,2})?)/i,
+    /סה["״']?כ\s+לתשלום\s+חודשי\D{0,25}([\d,]+(?:\.\d{1,2})?)/i
+  ]);
+  const policyNumber=policyDetectedText(clean,[
+    /(?:מספר|מס['׳]?)\s+פוליסה\s*[:\-]?\s*([A-Za-z0-9\-\/]+)/i,
+    /פוליסה\s+מספר\s*[:\-]?\s*([A-Za-z0-9\-\/]+)/i
+  ]);
+  const insuredName=policyDetectedText(clean,[
+    /שם\s+(?:ה)?מבוטח(?:\/ת)?\s*[:\-]?\s*([^\n]{2,45})/i,
+    /מבוטח\s*[:\-]\s*([^\n]{2,45})/i
+  ]);
+  const dateMatches=[...clean.matchAll(/(\d{1,2}[./-]\d{1,2}[./-]\d{2,4})/g)].map(match=>match[1]);
+  return {
+    type,company,policyNumber,insuredName,insuredAmount,monthlyPremium,
+    startDate:dateMatches[0]||'',endDate:dateMatches[1]||'',
+    structureType:type==='building'?(policyDetectedText(clean,[/סוג\s+מבנה\s*[:\-]?\s*([^\n]{2,35})/i])||''):'',
+    fileName
+  };
+}
+async function extractInsurancePolicyText(file){
+  const ext=(file.name.split('.').pop()||'').toLowerCase();
+  if(ext!=='pdf')return await file.text();
+  if(typeof pdfjsLib==='undefined')throw new Error('רכיב קריאת PDF אינו זמין.');
+  pdfjsLib.GlobalWorkerOptions.workerSrc='./document-worker.js';
+  const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+  const lines=[];
+  for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
+    const page=await pdf.getPage(pageNo),content=await page.getTextContent(),groups={};
+    content.items.forEach(item=>{const y=Math.round(item.transform[5]/3)*3;(groups[y]||(groups[y]=[])).push(item);});
+    Object.keys(groups).sort((a,b)=>b-a).forEach(y=>lines.push(groups[y].sort((a,b)=>a.transform[4]-b.transform[4]).map(item=>item.str).join(' ')));
+  }
+  return lines.join('\n');
+}
+async function importInsurancePolicyFile(file){
+  const status=document.getElementById('insurancePolicyStatus');
+  const show=(message,ok=true)=>{status.style.display='block';status.className='calcstatus '+(ok?'ok':'bad');status.textContent=message;};
+  show(`קורא את הפוליסה ${file.name}...`);
+  try{
+    const text=await extractInsurancePolicyText(file);
+    if(String(text).replace(/\s/g,'').length<40)throw new Error('לא נמצא טקסט קריא. ייתכן שהקובץ סרוק כתמונה.');
+    state.currentPolicy=Object.assign(state.currentPolicy||{},parseInsurancePolicyText(text,file.name));
+    show(`הפוליסה זוהתה כ${state.currentPolicy.type==='building'?'ביטוח מבנה':'ביטוח חיים'}${state.currentPolicy.company?' של '+state.currentPolicy.company:''}. ניתן לתקן את הנתונים לפני ההשוואה.`);
+    renderInsurancePolicyComparison();recalc();
+  }catch(error){show('לא ניתן לזהות את הפוליסה: '+error.message,false);}
+}
+function insurancePolicyDateValue(policy,file){
+  const values=[policy.endDate,policy.startDate].map(value=>{
+    const match=String(value||'').match(/(\d{1,2})[./-](\d{1,2})[./-](\d{2,4})/);
+    if(!match)return 0;
+    const year=Number(match[3])<100?2000+Number(match[3]):Number(match[3]);
+    return new Date(year,Number(match[2])-1,Number(match[1])).getTime()||0;
+  });
+  return Math.max(...values,num(file?.lastModified));
+}
+async function importInsurancePolicyFiles(files){
+  if(files.length===1)return importInsurancePolicyFile(files[0]);
+  const status=document.getElementById('insurancePolicyStatus');
+  status.style.display='block';status.className='calcstatus ok';status.textContent=`בודק ${files.length} פוליסות ומאתר את העדכנית...`;
+  try{
+    const parsed=[];
+    for(const file of files){
+      const text=await extractInsurancePolicyText(file);
+      if(String(text).replace(/\s/g,'').length<40)continue;
+      const policy=parseInsurancePolicyText(text,file.name);
+      parsed.push({policy,file,dateValue:insurancePolicyDateValue(policy,file)});
+    }
+    if(!parsed.length)throw new Error('לא נמצאה פוליסה עם טקסט קריא.');
+    parsed.sort((a,b)=>b.dateValue-a.dateValue);
+    state.currentPolicy=Object.assign(state.currentPolicy||{},parsed[0].policy);
+    status.textContent=`נבחרה הפוליסה העדכנית: ${parsed[0].file.name}${state.currentPolicy.company?' · '+state.currentPolicy.company:''}.`;
+    renderInsurancePolicyComparison();recalc();
+  }catch(error){
+    status.className='calcstatus bad';status.textContent='לא ניתן לזהות את הפוליסות: '+error.message;
+  }
+}
+function renderInsurancePolicyComparison(){
+  const grid=document.getElementById('insurancePolicyGrid'),cards=document.getElementById('insurancePolicyComparison');
+  if(!grid||!cards)return;
+  if(!state.currentPolicy)state.currentPolicy={type:'life',company:'',policyNumber:'',insuredName:'',insuredAmount:'',monthlyPremium:'',startDate:'',endDate:'',structureType:'',fileName:''};
+  const policy=state.currentPolicy;grid.innerHTML='';cards.innerHTML='';
+  const type=sel(policy,'type',['life','building']);
+  [...type.options].forEach(option=>option.textContent=option.value==='building'?'ביטוח מבנה':'ביטוח חיים');
+  type.onchange=()=>{policy.type=type.value;renderInsurancePolicyComparison();recalc();};
+  grid.append(field('סוג פוליסה',type),field('חברת ביטוח',inp(policy,'company')),field('מספר פוליסה',inp(policy,'policyNumber')),
+    field('שם המבוטח/ים',inp(policy,'insuredName')),field('סכום ביטוח',inp(policy,'insuredAmount','number')),
+    field('פרמיה חודשית נוכחית',inp(policy,'monthlyPremium','number','0.01')),field('תחילת ביטוח',inp(policy,'startDate')),field('סיום ביטוח',inp(policy,'endDate')));
+  if(policy.type==='building')grid.append(field('סוג מבנה שזוהה',inp(policy,'structureType')));
+  if(!num(policy.monthlyPremium)&&!num(policy.insuredAmount))return;
+  let proposedPremium=0,proposedAmount=0,description='';
+  if(policy.type==='life'){
+    const person=state.personal[state.insurance?.borrowerIndex]||state.personal[0]||{};
+    const companies=insuranceCompanies(person);
+    const projections=companies.map(insuranceProjection).filter(projection=>projection.first>0);
+    const matching=projections.find(projection=>projection.company===policy.company);
+    const best=projections.slice().sort((a,b)=>a.first-b.first)[0];
+    const selected=matching||best;
+    proposedPremium=selected?.first||0;proposedAmount=insuranceBalances()[0]||num(state.insurance?.amount);
+    description=matching?`השוואה לתעריף ${policy.company} במערכת`:`השוואה להצעה הזולה במערכת${best?' — '+best.company:''}`;
+  }else{
+    proposedAmount=num(state.buildingInsurance?.insuredAmount);
+    description='טרם קיימת טבלת תעריפי מבנה; מוצגת השוואת סכומי הביטוח בלבד';
+  }
+  const difference=num(policy.monthlyPremium)-proposedPremium;
+  [
+    ['פוליסה קיימת',fmtMoney(policy.monthlyPremium),`סכום ביטוח: ${fmtMoney(policy.insuredAmount)}`],
+    ['הצעה מחושבת',proposedPremium?fmtMoney(proposedPremium):'—',`סכום ביטוח: ${fmtMoney(proposedAmount)}`],
+    ['פער חודשי',proposedPremium?fmtMoney(difference):'—',proposedPremium?(difference>0?'חיסכון אפשרי':'הפוליסה הקיימת זולה יותר או זהה'):description],
+    ['פער שנתי',proposedPremium?fmtMoney(difference*12):'—',description]
+  ].forEach(([label,value,note])=>{const card=el('div',{cls:'kpi'});card.append(el('div',{cls:'l'},label),el('div',{cls:'v'},value),el('div',{cls:'note'},note));cards.append(card);});
+}
+function loadInsuranceFromSelectedMix(){
+  const cfg=state.insurance,key=cfg.sourceMix;
+  if(key==='manual'||!(state.mixes?.[key]||[]).length)return renderInsurance();
+  const mix=calcMix(state.mixes[key],state.params);
+  cfg.amount=Math.round(mix.E);cfg.annualRate=Number((mix.avgRate*100).toFixed(3));cfg.years=Number(mix.avgYears.toFixed(2));
+  renderInsurance();recalc();
+}
+function renderInsurance(){
+  if(!state.insurance)state.insurance={borrowerIndex:0,sourceMix:'manual',company:'כלל',amount:'',annualRate:4.5,years:20};
+  if(!state.insuranceRateOverrides||typeof state.insuranceRateOverrides!=='object')state.insuranceRateOverrides={};
+  if(!INSURANCE_RATE_PROFILES.some(([key])=>key===state.insuranceRateEditorProfile))state.insuranceRateEditorProfile='male_nonsmoker';
+  const cfg=state.insurance,grid=document.getElementById('insuranceGrid');
+  if(!grid)return;
+  renderInsurancePolicyComparison();
+  grid.innerHTML='';
+  const borrowerSelect=el('select');
+  state.personal.forEach((person,i)=>{
+    const name=[person.first,person.last].filter(Boolean).join(' ')||`לקוח ${i+1}`;
+    const option=el('option',{value:String(i)},name);if(i===num(cfg.borrowerIndex))option.selected=true;borrowerSelect.append(option);
+  });
+  borrowerSelect.onchange=()=>{cfg.borrowerIndex=num(borrowerSelect.value);cfg.company=insuranceCompanies(state.personal[cfg.borrowerIndex])[0]||'';renderInsurance();};
+  const sourceSelect=el('select');
+  [['manual','חישוב ידני'],...MIXKEYS].forEach(([value,label])=>{
+    const option=el('option',{value},label);if(cfg.sourceMix===value)option.selected=true;
+    if(value!=='manual'&&!(state.mixes[value]||[]).length)option.disabled=true;
+    sourceSelect.append(option);
+  });
+  sourceSelect.onchange=()=>{cfg.sourceMix=sourceSelect.value;loadInsuranceFromSelectedMix();};
+  const companies=insuranceCompanies(state.personal[cfg.borrowerIndex]);
+  if(!companies.includes(cfg.company))cfg.company=companies[0]||'';
+  const companySelect=el('select');
+  companies.forEach(company=>{const option=el('option',{value:company},company);if(company===cfg.company)option.selected=true;companySelect.append(option);});
+  companySelect.onchange=()=>{cfg.company=companySelect.value;renderInsurance();};
+  grid.append(field('מבוטח/ת',borrowerSelect),field('מקור נתוני המשכנתא',sourceSelect),
+    field('סכום קרן',inp(cfg,'amount','number')),field('ריבית שנתית (%)',inp(cfg,'annualRate','number','0.01')),
+    field('תקופה (שנים)',inp(cfg,'years','number','0.5')),field('חברה לפירוט חודשי',companySelect));
+
+  const person=state.personal[cfg.borrowerIndex]||{},warning=document.getElementById('insuranceWarning');
+  const warnings=[];
+  if(!person.birth)warnings.push('יש להזין תאריך לידה בנתונים האישיים.');
+  if((insuranceBalances()[0]||num(cfg.amount))>500000)warnings.push('קובץ התעריפים מסומן עד סכום ביטוח של 500,000 ₪; החישוב מעל סכום זה הוא הכפלה יחסית של אותו תעריף.');
+  const projections=companies.map(insuranceProjection);
+  if(projections.some(p=>p.missing))warnings.push('אין בקובץ תעריף לחלק מתקופת הביטוח — התעריפים המצורפים קיימים לגילים 18–79 בלבד.');
+  warning.style.display=warnings.length?'block':'none';warning.innerHTML=warnings.join('<br>');
+
+  const cards=document.getElementById('insuranceCards');cards.innerHTML='';
+  projections.slice().sort((a,b)=>a.total-b.total).forEach((p,i)=>{
+    const card=el('div',{cls:'kpi'});
+    card.append(el('div',{cls:'l'},p.company+(i===0?' · הזולה ביותר':'')),
+      el('div',{cls:'v'},fmtMoney(p.total)),
+      el('div',{cls:'note'},`חודש ראשון: ${fmtMoney(p.first)} · ממוצע: ${fmtMoney(p.average)}`));
+    cards.append(card);
+  });
+  const selected=projections.find(p=>p.company===cfg.company)||projections[0]||{rows:[]};
+  const annualTable=document.getElementById('insuranceAnnualTbl');annualTable.innerHTML='';
+  const annualHead=el('tr');
+  ['שנת ביטוח','תשלום עדכון','גיל לחישוב','סכום ביטוח','תעריף ל־10,000 ₪','פרמיה חודשית','תשלומים בשנה','עלות שנתית','עלות מצטברת'].forEach(x=>annualHead.append(el('th',{},x)));
+  annualTable.append(el('thead',{},annualHead));
+  const annualBody=el('tbody');let annualCumulative=0;
+  selected.rows.filter(row=>row.isAnnualUpdate).forEach(row=>{
+    const payments=Math.min(12,selected.rows.length-row.month+1);
+    const annualCost=row.premium*payments;annualCumulative+=annualCost;
+    const tr=el('tr');
+    [row.insuranceYear,row.month,row.age??'—',fmtMoney(row.insuredAmount),row.rate?row.rate.toFixed(3):'—',fmtMoney(row.premium),payments,fmtMoney(annualCost),fmtMoney(annualCumulative)].forEach(x=>tr.append(el('td',{},String(x))));
+    annualBody.append(tr);
+  });
+  annualTable.append(annualBody);
+  const table=document.getElementById('insuranceTbl');table.innerHTML='';
+  const head=el('tr');['תשלום','שנת ביטוח','גיל לחישוב','יתרת קרן','סכום ביטוח לחישוב','תעריף ל־10,000 ₪','פרמיה חודשית','פרמיה מצטברת'].forEach(x=>head.append(el('th',{},x)));table.append(el('thead',{},head));
+  const body=el('tbody');
+  selected.rows.forEach(row=>{
+    const tr=el('tr');
+    if(row.isAnnualUpdate){tr.style.background='#173422';tr.style.fontWeight='700';}
+    [row.month,row.insuranceYear,row.age??'—',fmtMoney(row.balance),fmtMoney(row.insuredAmount),row.rate?row.rate.toFixed(3):'—',fmtMoney(row.premium),fmtMoney(row.total)].forEach(x=>tr.append(el('td',{},String(x))));
+    body.append(tr);
+  });
+  table.append(body);
+  if(window._charts.chartInsurance)window._charts.chartInsurance.destroy();
+  window._charts.chartInsurance=new Chart(document.getElementById('chartInsurance'),{type:'line',
+    data:{labels:selected.rows.map(r=>r.month),datasets:projections.map((p,i)=>({label:p.company,data:p.rows.map(r=>r.premium),borderColor:['#3b82f6','#22c55e','#a855f7','#ef4444','#06b6d4','#f59e0b','#ec4899'][i%7],pointRadius:0,borderWidth:1.7,stepped:true,tension:0}))},
+    options:{responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:'#93a4bd'}}},
+      scales:{x:{ticks:{color:'#93a4bd',maxTicksLimit:12},grid:{color:'#2b3a52'},title:{display:true,text:'חודש',color:'#93a4bd'}},
+        y:{ticks:{color:'#93a4bd',callback:v=>fmtMoney(v)},grid:{color:'#2b3a52'}}}}});
+  renderInsuranceRateEditor();
+  renderBuildingInsurance();
+}
+const INSURANCE_RATE_PROFILES=[
+  ['male_nonsmoker','גבר · לא מעשן'],
+  ['male_smoker','גבר · מעשן'],
+  ['female_nonsmoker','אישה · לא מעשנת'],
+  ['female_smoker','אישה · מעשנת']
+];
+let INSURANCE_RATE_EDITOR_OPEN=false;
+function toggleInsuranceRateEditor(force){
+  INSURANCE_RATE_EDITOR_OPEN=typeof force==='boolean'?force:!INSURANCE_RATE_EDITOR_OPEN;
+  const editor=document.getElementById('insuranceRatesEditor'),button=document.getElementById('insuranceRatesToggle');
+  if(editor)editor.style.display=INSURANCE_RATE_EDITOR_OPEN?'block':'none';
+  if(button)button.textContent=INSURANCE_RATE_EDITOR_OPEN?'סגור תעריפים':'עדכון תעריפים';
+  if(INSURANCE_RATE_EDITOR_OPEN)renderInsuranceRateEditor();
+}
+let BUILDING_RATE_EDITOR_OPEN=false;
+function toggleBuildingRateEditor(force){
+  BUILDING_RATE_EDITOR_OPEN=typeof force==='boolean'?force:!BUILDING_RATE_EDITOR_OPEN;
+  const editor=document.getElementById('buildingRatesEditor'),button=document.getElementById('buildingRatesToggle');
+  if(editor)editor.style.display=BUILDING_RATE_EDITOR_OPEN?'block':'none';
+  if(button)button.textContent=BUILDING_RATE_EDITOR_OPEN?'סגור תעריפי מבנה':'עדכון תעריפי מבנה';
+}
+function setInsuranceRateProfile(profile){
+  state.insuranceRateEditorProfile=profile;
+  renderInsuranceRateEditor();
+  recalc();
+}
+function setInsuranceRate(profile,age,company,value){
+  state.insuranceRateOverrides[profile]??={};
+  state.insuranceRateOverrides[profile][String(age)]??={};
+  if(value===''){
+    delete state.insuranceRateOverrides[profile][String(age)][company];
+  }else{
+    state.insuranceRateOverrides[profile][String(age)][company]=Math.max(0,num(value));
+  }
+}
+function resetInsuranceRateProfile(){
+  delete state.insuranceRateOverrides[state.insuranceRateEditorProfile];
+  renderInsurance();recalc();
+}
+function resetAllInsuranceRates(){
+  state.insuranceRateOverrides={};
+  renderInsurance();recalc();
+}
+function insurancePdfNumber(value){
+  const cleaned=String(value??'').replace(/[^\d.,-]/g,'').replace(/,/g,'.');
+  const number=parseFloat(cleaned);
+  return isFinite(number)?number:null;
+}
+async function importInsuranceRatesPdf(event){
+  const file=event.target.files?.[0];
+  event.target.value='';
+  if(!file)return;
+  const status=document.getElementById('insurancePdfStatus');
+  const profile=state.insuranceRateEditorProfile||'male_nonsmoker';
+  const company=document.getElementById('insurancePdfCompany')?.value;
+  const show=(text,ok=true)=>{
+    status.style.display='block';status.className='calcstatus '+(ok?'ok':'bad');status.textContent=text;
+  };
+  if(!company)return show('יש לבחור חברה לפני העלאת הקובץ.',false);
+  if(typeof pdfjsLib==='undefined')return show('רכיב קריאת ה־PDF אינו זמין.',false);
+  show(`קורא את קובץ התעריפים של ${company}...`);
+  try{
+    pdfjsLib.GlobalWorkerOptions.workerSrc='./document-worker.js';
+    const pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise;
+    const extracted={};
+    for(let pageNo=1;pageNo<=pdf.numPages;pageNo++){
+      const page=await pdf.getPage(pageNo),content=await page.getTextContent(),groups={};
+      content.items.forEach(item=>{
+        const y=Math.round(item.transform[5]/3)*3;
+        (groups[y]||(groups[y]=[])).push({text:String(item.str).trim(),x:item.transform[4]});
+      });
+      Object.values(groups).forEach(items=>{
+        const tokens=items.filter(item=>item.text).map(item=>({...item,number:insurancePdfNumber(item.text)}));
+        const ageItem=tokens.find(item=>Number.isInteger(item.number)&&item.number>=18&&item.number<=79);
+        if(!ageItem)return;
+        const candidates=tokens.filter(item=>item!==ageItem&&item.number!==null&&item.number>=0&&item.number<=200&&item.number!==ageItem.number)
+          .sort((a,b)=>Math.abs(a.x-ageItem.x)-Math.abs(b.x-ageItem.x));
+        if(candidates.length)extracted[String(ageItem.number)]=candidates[0].number;
+      });
+    }
+    const ages=Object.keys(extracted);
+    if(ages.length<5)return show(`לא זוהתה טבלת גיל–תעריף תקינה בקובץ של ${company}. זוהו רק ${ages.length} שורות.`,false);
+    state.insuranceRateOverrides[profile]??={};
+    ages.forEach(age=>{
+      state.insuranceRateOverrides[profile][age]??={};
+      state.insuranceRateOverrides[profile][age][company]=extracted[age];
+    });
+    show(`עודכנו ${ages.length} תעריפים עבור ${company} בטבלת ${INSURANCE_RATE_PROFILES.find(([key])=>key===profile)?.[1]||profile}.`);
+    renderInsurance();recalc();
+  }catch(error){
+    show(`לא ניתן היה לקרוא את קובץ ה־PDF של ${company}.`,false);
+  }
+}
+function renderInsuranceRateEditor(){
+  const select=document.getElementById('insuranceRateProfile'),companySelect=document.getElementById('insurancePdfCompany'),table=document.getElementById('insuranceRatesTbl');
+  if(!select||!table)return;
+  const profile=state.insuranceRateEditorProfile||'male_nonsmoker';
+  select.innerHTML='';
+  INSURANCE_RATE_PROFILES.forEach(([value,label])=>{const option=el('option',{value},label);if(value===profile)option.selected=true;select.append(option);});
+  const source=window.INSURANCE_RATES?.[profile]||{},ages=Object.keys(source).map(Number).sort((a,b)=>a-b);
+  const companies=Object.keys(source[String(ages[0])]||{});
+  if(companySelect){
+    const previous=companySelect.value;companySelect.innerHTML='';
+    companies.forEach(company=>companySelect.append(el('option',{value:company},company)));
+    if(companies.includes(previous))companySelect.value=previous;
+  }
+  table.innerHTML='';
+  const head=el('tr');head.append(el('th',{},'גיל'));
+  companies.forEach(company=>head.append(el('th',{},company)));
+  table.append(el('thead',{},head));
+  const body=el('tbody');
+  ages.forEach(age=>{
+    const tr=el('tr');tr.append(el('td',{cls:'metric'},String(age)));
+    companies.forEach(company=>{
+      const input=el('input',{type:'number',step:'0.001',min:'0',dir:'ltr',value:String(effectiveInsuranceRate(profile,age,company))});
+      input.oninput=()=>{
+        setInsuranceRate(profile,age,company,input.value);
+        input.style.borderColor='#22c55e';
+        input.title='תעריף שעודכן במערכת';
+      };
+      input.onchange=()=>{renderInsurance();recalc();};
+      const overridden=Object.prototype.hasOwnProperty.call(state.insuranceRateOverrides?.[profile]?.[String(age)]||{},company);
+      if(overridden){input.style.borderColor='#22c55e';input.title='תעריף שעודכן במערכת';}
+      tr.append(td(input));
+    });
+    body.append(tr);
+  });
+  table.append(body);
+}
+function renderBuildingInsurance(){
+  const grid=document.getElementById('buildingInsuranceGrid');
+  if(!grid)return;
+  if(!state.buildingInsurance)state.buildingInsurance={structureType:'פרטי',buildingAge:'',insuredAmount:'',previouslyInsured:'לא',hadClaims:'לא',claimsCount:0};
+  if(!state.currentPolicy)state.currentPolicy={type:'life',company:'',policyNumber:'',insuredName:'',insuredAmount:'',monthlyPremium:'',startDate:'',endDate:'',structureType:'',fileName:''};
+  const cfg=state.buildingInsurance;
+  grid.innerHTML='';
+  const structure=sel(cfg,'structureType',['פרטי','דו משפחתי','קומת קרקע בבניין','קומת ביניים','קומה אחרונה','פנטהאוז']);
+  const age=inp(cfg,'buildingAge','number','1');age.setAttribute('min','0');
+  const amount=inp(cfg,'insuredAmount','number','1000');amount.setAttribute('min','0');
+  const insured=sel(cfg,'previouslyInsured',['לא','כן']);
+  insured.onchange=()=>{
+    cfg.previouslyInsured=insured.value;
+    if(insured.value==='לא'){cfg.hadClaims='לא';cfg.claimsCount=0;}
+    renderBuildingInsurance();recalc();
+  };
+  grid.append(field('סוג המבנה',structure),field('גיל המבנה (שנים)',age),field('סכום ביטוח המבנה *',amount),field('האם המבנה היה מבוטח בעבר?',insured));
+  if(cfg.previouslyInsured==='כן'){
+    const claims=sel(cfg,'hadClaims',['לא','כן']);
+    claims.onchange=()=>{
+      cfg.hadClaims=claims.value;
+      if(claims.value==='לא')cfg.claimsCount=0;
+      renderBuildingInsurance();recalc();
+    };
+    grid.append(field('האם היו תביעות?',claims));
+    if(cfg.hadClaims==='כן'){
+      const count=inp(cfg,'claimsCount','number','1');count.setAttribute('min','1');
+      grid.append(field('מספר התביעות',count));
+    }
+  }
+  document.getElementById('buildingTypeSummary').textContent=cfg.structureType||'—';
+  document.getElementById('buildingAmountSummary').textContent=num(cfg.insuredAmount)?fmtMoney(cfg.insuredAmount):'—';
+  document.getElementById('buildingHistorySummary').textContent=
+    cfg.previouslyInsured!=='כן'?'לא היה מבוטח':
+    cfg.hadClaims!=='כן'?'מבוטח ללא תביעות':
+    `${Math.max(0,Math.round(num(cfg.claimsCount)))} תביעות`;
+}
+
+/* ===================== עמלת היוון / פירעון מוקדם ===================== */
+function prepaymentCalculation(){
+  const cfg=state.prepayment||{},pv=Math.max(0,num(cfg.balance));
+  const N=Math.max(1,Math.round(num(cfg.remainingMonths)));
+  const n=Math.min(N,Math.max(1,Math.round(num(cfg.monthsToRateChange)||N)));
+  const R=Math.max(0,num(cfg.annualLoanRate))/1200;
+  const A=Math.max(0,num(cfg.annualAverageRate))/1200;
+  const payment=-PMT(R,N,pv);
+  let balance=pv,pvPaymentsA=0,pvPaymentsR=0;
+  const rows=[];
+  for(let month=1;month<=n;month++){
+    const interest=balance*R,principal=Math.min(balance,payment-interest);
+    const contractualPayment=interest+principal;
+    pvPaymentsA+=contractualPayment/Math.pow(1+A,month);
+    pvPaymentsR+=contractualPayment/Math.pow(1+R,month);
+    balance=Math.max(0,balance-principal);
+    rows.push({month,payment:contractualPayment,interest,principal,balance});
+  }
+  const balanceAtChange=n<N?balance:0;
+  const pvBalanceA=balanceAtChange/Math.pow(1+A,n);
+  const pvBalanceR=balanceAtChange/Math.pow(1+R,n);
+  const pvA=pvPaymentsA+pvBalanceA,pvR=pvPaymentsR+pvBalanceR;
+  const economicLoss=pvA-pvR;
+  const repaymentRatio=Math.min(1,Math.max(0,num(cfg.repaymentPct)/100));
+  const reductionRatio=Math.min(1,Math.max(0,num(cfg.reductionPct)/100));
+  const grossFee=Math.max(0,economicLoss)*repaymentRatio;
+  const finalFee=grossFee*(1-reductionRatio);
+  return {pv,N,n,R,A,payment,balanceAtChange,pvPaymentsA,pvPaymentsR,pvBalanceA,pvBalanceR,pvA,pvR,economicLoss,repaymentRatio,reductionRatio,grossFee,finalFee,rows};
+}
+function refreshPrepaymentRouteSelect(){
+  const mixSelect=document.getElementById('prepaymentMixSelect'),routeSelect=document.getElementById('prepaymentRouteSelect');
+  if(!mixSelect||!routeSelect)return;
+  const cfg=state.prepayment,previousMix=cfg.mixKey;
+  mixSelect.innerHTML='';
+  MIXKEYS.forEach(([key,title])=>{
+    const option=el('option',{value:key},title);if(!(state.mixes[key]||[]).length)option.disabled=true;if(key===previousMix)option.selected=true;mixSelect.append(option);
+  });
+  if(!(state.mixes[cfg.mixKey]||[]).length)cfg.mixKey=MIXKEYS.find(([key])=>(state.mixes[key]||[]).length)?.[0]||'current';
+  mixSelect.value=cfg.mixKey;
+  routeSelect.innerHTML='';
+  (state.mixes[cfg.mixKey]||[]).forEach((route,i)=>{
+    const label=`מסלול ${i+1} · ${route.rateType||''} ${route.indexType||''} · ${fmtMoney(route.amount)}`;
+    const option=el('option',{value:String(i)},label);if(i===num(cfg.routeIndex))option.selected=true;routeSelect.append(option);
+  });
+  if(num(cfg.routeIndex)>=routeSelect.options.length)cfg.routeIndex=0;
+  routeSelect.value=String(cfg.routeIndex);
+}
+function loadPrepaymentRoute(){
+  const cfg=state.prepayment,route=state.mixes?.[cfg.mixKey]?.[num(cfg.routeIndex)];
+  if(!route)return renderPrepayment();
+  const calculated=calcRoute(route,state.params);
+  cfg.balance=num(route.amount);
+  cfg.annualLoanRate=Number((calculated.annualRate*100).toFixed(4));
+  cfg.remainingMonths=Math.max(1,Math.round(num(route.years)*12));
+  cfg.monthsToRateChange=inferRouteKind(route)==='variable'
+    ?Math.min(cfg.remainingMonths,Math.max(1,Math.round(num(route.changeMonths)||cfg.remainingMonths)))
+    :cfg.remainingMonths;
+  renderPrepayment();recalc();
+}
+function renderPrepayment(){
+  const grid=document.getElementById('prepaymentGrid');if(!grid)return;
+  if(!state.prepayment)state.prepayment={mixKey:'current',routeIndex:0,balance:'',annualLoanRate:4.5,annualAverageRate:3.5,remainingMonths:240,monthsToRateChange:240,repaymentPct:100,reductionPct:0};
+  const cfg=state.prepayment;grid.innerHTML='';
+  const mixSelect=el('select',{id:'prepaymentMixSelect'});
+  mixSelect.onchange=()=>{cfg.mixKey=mixSelect.value;cfg.routeIndex=0;refreshPrepaymentRouteSelect();};
+  const routeSelect=el('select',{id:'prepaymentRouteSelect'});
+  routeSelect.onchange=()=>{cfg.routeIndex=num(routeSelect.value);};
+  grid.append(field('מקור המסלול',mixSelect),field('מסלול לטעינה',routeSelect),
+    field('סכום קרן לפירעון (PV)',inp(cfg,'balance','number')),
+    field('ריבית שנתית בהלוואה R (%)',inp(cfg,'annualLoanRate','number','0.01')),
+    field('ריבית שנתית ממוצעת A (%)',inp(cfg,'annualAverageRate','number','0.01')),
+    field('תקופות עד סוף ההלוואה N (חודשים)',inp(cfg,'remainingMonths','number','1')),
+    field('תקופות עד שינוי הריבית n (חודשים)',inp(cfg,'monthsToRateChange','number','1')),
+    field('שיעור הפירעון מהמסלול (%)',inp(cfg,'repaymentPct','number','1')),
+    field('שיעור הפחתה מהעמלה (%)',inp(cfg,'reductionPct','number','1')));
+  refreshPrepaymentRouteSelect();
+  const result=prepaymentCalculation(),warning=document.getElementById('prepaymentWarning'),warnings=[];
+  if(!result.pv)warnings.push('יש להזין סכום קרן לפירעון.');
+  if(result.n>result.N)warnings.push('מספר החודשים עד שינוי הריבית לא יכול להיות גדול מהתקופה שנותרה.');
+  warning.style.display=warnings.length?'block':'none';warning.innerHTML=warnings.join('<br>');
+  document.getElementById('prepayPvA').textContent=fmtMoney(result.pvA);
+  document.getElementById('prepayPvR').textContent=fmtMoney(result.pvR);
+  document.getElementById('prepayGross').textContent=fmtMoney(result.grossFee);
+  document.getElementById('prepayFinal').textContent=fmtMoney(result.finalFee);
+  document.getElementById('prepaymentExplanation').textContent=
+    result.economicLoss<=0
+      ?'הריבית הממוצעת אינה נמוכה מריבית ההלוואה במידה שיוצרת הפסד כלכלי; לכן עמלת ההיוון היא 0.'
+      :`ההפרש החיובי הוא ${fmtMoney(result.economicLoss)}. לאחר שיעור פירעון של ${(result.repaymentRatio*100).toFixed(1)}% והפחתה של ${(result.reductionRatio*100).toFixed(1)}%, העמלה המשוערת היא ${fmtMoney(result.finalFee)}.`;
+  const table=document.getElementById('prepaymentTbl');table.innerHTML='';
+  const head=el('tr');['רכיב','לפי A','לפי R','הפרש'].forEach(x=>head.append(el('th',{},x)));table.append(el('thead',{},head));
+  const body=el('tbody');
+  [
+    ['ערך נוכחי של תשלומים עד תחנת השינוי',result.pvPaymentsA,result.pvPaymentsR,result.pvPaymentsA-result.pvPaymentsR],
+    ['ערך נוכחי של הקרן בתחנת השינוי',result.pvBalanceA,result.pvBalanceR,result.pvBalanceA-result.pvBalanceR],
+    ['סה״כ ערך נוכחי',result.pvA,result.pvR,result.economicLoss],
+    ['יתרת קרן בתחנת שינוי הריבית',result.balanceAtChange,result.balanceAtChange,0]
+  ].forEach(([label,a,r,diff])=>{const tr=el('tr');[label,fmtMoney(a),fmtMoney(r),fmtMoney(diff)].forEach(x=>tr.append(el('td',{},String(x))));body.append(tr);});
+  table.append(body);
+}
+
+/* ===================== נתונים כלכליים ===================== */
+function renderFinancial(){
+  const g=document.getElementById('finGrid'); g.innerHTML='';
+  const f=state.financial;
+  const periodMonths=Math.round(num(f.period)*12);
+  g.append(field('תאריך לקיחת המשכנתא / התחלה',inp(f,'date','date')));
+  g.append(field('סוג משכנתא',sel(f,'type',['משכנתא חדשה','מחזור משכנתא'])));
+  g.append(field('הון עצמי',inp(f,'equity','number')));
+  g.append(field('סכום משכנתא',inp(f,'loanAmount','number')));
+  const needed = num(f.loanAmount)-num(f.equity);
+  g.append(field('סכום דרוש (מחושב)',roIn(fmt(needed))));
+  g.append(field('תקופה (שנים)',inp(f,'period','number')));
+  g.append(field('תקופה (חודשים)',periodMonthsInput()));
+  g.append(field('תאריך סיום מחושב',roIn(periodMonths>0?fmtFullDate(periodEndDate(periodMonths)):'')));
+  g.append(field('מינ׳ החזר חודשי רצוי',inp(f,'minPay','number')));
+  g.append(field('מקס׳ החזר חודשי רצוי',inp(f,'maxPayDesired','number')));
+  const totInc=state.personal.reduce((s,b)=>s+num(b.income),0);
+  const maxPoss=Math.min(num(f.maxPayDesired)||Infinity, totInc*0.30);
+  g.append(field('מקס׳ החזר אפשרי (30% הכנסה)',roIn(fmt(isFinite(maxPoss)?maxPoss:0))));
+
+  const lt=document.getElementById('loansTbl'); lt.innerHTML='';
+  const lc=['#','סכום','משך (שנים)','החזר חודשי (מחושב)','יתרה שנותרה',''];
+  const ltr=el('tr'); lc.forEach(c=>ltr.append(el('th',{},c))); lt.append(el('thead',{},ltr));
+  const ltb=el('tbody');
+  state.loans.forEach((ln,i)=>{
+    const row=el('tr'); row.append(el('td',{},String(i+1)));
+    row.append(td(inp(ln,'amount','number')));
+    row.append(td(inp(ln,'years','number')));
+    row.append(td(roIn(fmt(num(ln.years)>0?num(ln.amount)/(num(ln.years)*12):0))));
+    row.append(td(inp(ln,'remain','number')));
+    const del=el('button',{cls:'iconbtn del'},'✕'); del.onclick=()=>{state.loans.splice(i,1);renderFinancial();};
+    row.append(el('td',{},el('div',{cls:'rowact'},del)));
+    ltb.append(row);
+  });
+  lt.append(ltb);
+
+  const fg=document.getElementById('flagsGrid'); fg.innerHTML='';
+  const fl=state.flags; const yn=['לא','כן'];
+  fg.append(field('פיגורים',sel(fl,'arrears',yn)));
+  fg.append(field('החזרי המחאות',sel(fl,'checks',yn)));
+  fg.append(field('תיק הוצאה לפועל',sel(fl,'execution',yn)));
+  fg.append(field('חשבון מוגבל (גם בעבר)',sel(fl,'restricted',yn)));
+  fg.append(field('בקשה למשכנתא נדחתה',sel(fl,'rejected',yn)));
+  fg.append(field('בקשה לביטוח EMI נדחתה',sel(fl,'emi',yn)));
+}
+function addLoan(){state.loans.push({amount:'',years:'',remain:''});renderFinancial();}
+
+/* ===================== פרמטרים ===================== */
+function renderParams(){
+  const g=document.getElementById('paramsGrid'); g.innerHTML='';
+  for(const k in state.params){
+    const wrap=el('div',{cls:'f'});
+    wrap.append(el('label',{},k+' (צפי שינוי שנתי באחוזים)'));
+    const i=percentInput(state.params,k);
+    wrap.append(i); g.append(wrap);
+  }
+  const mode=document.getElementById('indexCalcMode');
+  if(mode)mode.value=state.indexCalcMode||'annual';
+  if(state.indexCalcMode==='monthly')fillMonthlyIndexTerm(false);
+  renderMonthlyIndices();
+}
+function setIndexCalcMode(value){
+  state.indexCalcMode=value==='monthly'?'monthly':'annual';
+  if(state.indexCalcMode==='monthly')fillMonthlyIndexTerm(false);
+  renderMonthlyIndices();
+  recalc();
+}
+function normalizeMonthlyIndices(){
+  if(!Array.isArray(state.monthlyIndices))state.monthlyIndices=[];
+  state.monthlyIndices.sort((a,b)=>String(a.month).localeCompare(String(b.month)));
+}
+function addMonthlyIndex(month){
+  normalizeMonthlyIndices();
+  const last=state.monthlyIndices[state.monthlyIndices.length-1]?.month;
+  const next=month||monthKey(last?last+'-01':(state.financial?.date||today()),last?1:0);
+  if(!state.monthlyIndices.some(x=>x.month===next))state.monthlyIndices.push({month:next,rate:''});
+  renderMonthlyIndices();
+}
+function fillMonthlyIndexYear(){
+  normalizeMonthlyIndices();
+  for(let i=0;i<12;i++){
+    const month=monthKey(state.financial?.date||today(),i);
+    if(!state.monthlyIndices.some(x=>x.month===month))state.monthlyIndices.push({month,rate:''});
+  }
+  renderMonthlyIndices();
+}
+function mortgageTermMonths(){
+  const routeMonths=Object.values(state.mixes||{}).flat().map(rt=>Math.round(num(rt.years)*12));
+  return Math.max(12,Math.round(num(state.financial?.period)*12),...routeMonths);
+}
+function fillMonthlyIndexTerm(render=true){
+  normalizeMonthlyIndices();
+  const months=mortgageTermMonths();
+  for(let i=0;i<months;i++){
+    const month=monthKey(state.financial?.date||today(),i);
+    if(!state.monthlyIndices.some(x=>x.month===month))state.monthlyIndices.push({month,rate:0});
+  }
+  if(render)renderMonthlyIndices();
+}
+function resetMonthlyIndexRates(){
+  normalizeMonthlyIndices();
+  state.monthlyIndices.forEach(row=>row.rate=0);
+  renderMonthlyIndices();
+  recalc();
+}
+function renderMonthlyIndices(){
+  normalizeMonthlyIndices();
+  const area=document.getElementById('monthlyIndexArea');
+  const tbl=document.getElementById('monthlyIndexTbl');
+  if(!area||!tbl)return;
+  area.style.opacity=state.indexCalcMode==='monthly'?'1':'.55';
+  tbl.innerHTML='';
+  const head=el('tr');
+  ['חודש','שינוי יחסי בחודש (%)','מדד מצטבר (בסיס 100)','שינוי מצטבר',''].forEach(x=>head.append(el('th',{},x)));
+  tbl.append(el('thead',{},head));
+  const body=el('tbody');
+  let cumulative=1;
+  state.monthlyIndices.forEach((row,i)=>{
+    cumulative*=1+num(row.rate);
+    const tr=el('tr');
+    const month=el('input',{type:'month',value:row.month||''});
+    month.onchange=()=>{row.month=month.value;normalizeMonthlyIndices();renderMonthlyIndices();recalc();};
+    const rate=el('input',{type:'number',step:'0.01',dir:'ltr',inputmode:'decimal',value:row.rate===''?'':num(row.rate)*100});
+    rate.oninput=()=>{row.rate=rate.value===''?'':num(rate.value)/100;recalc();};
+    rate.onchange=()=>{renderMonthlyIndices();};
+    const del=el('button',{cls:'iconbtn del',title:'מחק חודש'},'✕');
+    del.onclick=()=>{state.monthlyIndices.splice(i,1);renderMonthlyIndices();recalc();};
+    tr.append(td(month),td(rate),tdc((100*cumulative).toFixed(3)),tdc(fmtPct(cumulative-1)),td(del));
+    body.append(tr);
+  });
+  if(!state.monthlyIndices.length){
+    const tr=el('tr');tr.append(el('td',{colspan:'5'},'אין עדיין נתוני מדד חודשיים. נקודת ההתחלה היא 0%; צור טבלה והזן רק חודשים שבהם המדד השתנה.'));
+    body.append(tr);
+  }
+  tbl.append(body);
+}
+
+/* ===================== תמהילים ===================== */
+const MIX_OPEN={};
+function renderMixes(){
+  const cont=document.getElementById('mixesContainer'); cont.innerHTML='';
+  const loanInput=document.getElementById('mixLoanInput');
+  const minInput=document.getElementById('mixMinPayInput');
+  const maxInput=document.getElementById('mixMaxPayInput');
+  if(loanInput)loanInput.value=state.financial?.loanAmount??'';
+  if(minInput)minInput.value=state.financial?.minPay??'';
+  if(maxInput)maxInput.value=state.financial?.maxPayDesired??'';
+  const proposalSource=document.getElementById('currentMortgageProposalSource');
+  const currentBalance=currentMortgageBalance();
+  if(proposalSource){
+    proposalSource.style.display=currentBalance>0?'block':'none';
+    const purposeLabel=state.currentMortgagePurpose==='mixed'
+      ?`מעורב — דיור ${(num(state.currentPurposeShares?.housing)*100).toFixed(1)}% · נכס קיים ${(num(state.currentPurposeShares?.allPurpose)*100).toFixed(1)}%`
+      :(state.currentMortgagePurpose==='allPurpose'?'לכל מטרה / נכס קיים':'מטרות דיור');
+    proposalSource.textContent=currentBalance>0?`תמהילים 1–5 מחושבים כהצעות מחזור על יתרת המשכנתא הקיימת: ${fmtMoney(currentBalance)} · טבלת ריביות: ${purposeLabel}`:'';
+  }
+  MIXKEYS.forEach(([key,title])=>{
+    const routes=state.mixes[key];
+    applyMixSettingsToRoutes(key);
+    const m=calcMix(routes,state.params);
+    const isOpen = MIX_OPEN[key]!==undefined ? MIX_OPEN[key] : (key!=='current'&&routes.length>0);
+    const sec=el('div',{cls:'mix'+(isOpen?' open':'')});
+    const head=el('div',{cls:'head'});
+    head.append(el('h3',{},title));
+    head.append(el('span',{cls:'pill'},routes.length+' מסלולים'));
+    if(key==='current'){
+      const quickUpload=el('button',{cls:'btn green'},'העלה דוח יתרות');
+      quickUpload.onclick=e=>{e.stopPropagation();document.getElementById('mortgageReportFile').click();};
+      head.append(quickUpload);
+    }else{
+      const todayWrap=el('label',{cls:'pill',style:'cursor:pointer;display:flex;gap:6px;align-items:center'});
+      const todayCheck=el('input',{type:'checkbox',style:'width:auto'});
+      todayCheck.checked=!!mixSettings(key).takenToday;
+      todayCheck.onclick=e=>e.stopPropagation();
+      todayCheck.onchange=e=>{e.stopPropagation();setMixTakenToday(key,todayCheck.checked);};
+      todayWrap.append(todayCheck,document.createTextNode('משכנתא שנלקחה היום'));
+      head.append(todayWrap);
+    }
+    const chips=el('div',{cls:'chips',html:
+      `סכום: <b>${fmtMoney(key==='current'?m.totalAmount:m.E)}</b>`+
+      (key==='current'&&m.exitFee?`<span>עמלת היוון: <b>${fmtMoney(m.exitFee)}</b></span>`:'')+
+      `<span>תשלום ראשון: <b>${fmtMoney(m.firstPay)}</b></span>`+
+      `<span>סה״כ: <b>${fmtMoney(m.total)}</b></span>`+
+      `<span>ריבית ממוצעת: <b>${fmtPct(m.avgRate)}</b></span>`+
+      `<span>רמת סיכון כללית: <b>רמה ${mixRisk(routes).level} · ${mixRisk(routes).label} (${mixRisk(routes).score.toFixed(2)}/5)</b></span>`});
+    head.append(chips);
+    head.onclick=(e)=>{ if(['BUTTON','INPUT','SELECT'].includes(e.target.tagName))return;
+      MIX_OPEN[key]=!sec.classList.contains('open'); sec.classList.toggle('open'); };
+    sec.append(head);
+
+    const body=el('div',{cls:'body'});
+    const sc=el('div',{cls:'scroll'});
+    const tbl=el('table');
+    const heads=['#','סוג מסלול','אחוז מהתמהיל','סכום','תקופה (שנים)','קפיצת חיפוש (שנים)','תקופה (חודשים)','תאריך סיום','לוח','שינוי ריבית כל (חודשים)','תאריך עדכון ריבית אחרון','תאריך עדכון ריבית הבא','הצמדה','סוג עוגן','עוגן (%)','מרווח (%)','ריבית שנתית','ריבית מתואמת','מדד שנתי / בפועל','תשלום חודשי','צפי החזרים כולל','סיכון','עמלת היוון / קנס יציאה',''];
+    const htr=el('tr'); heads.forEach(h=>htr.append(el('th',{},h))); tbl.append(el('thead',{},htr));
+    const tb=el('tbody');
+    routes.forEach((rt,i)=>{
+      const c=m.per[i];
+      const row=el('tr');
+      row.append(el('td',{},String(i+1)));
+      row.append(td(routeKindSelect(rt)));
+      row.append(td(inp(rt,'sharePct','number','0.01')));
+      row.append(td(inp(rt,'amount','number')));
+      row.append(td(routeYearsInput(rt)));
+      row.append(td(yearStepInput(rt)));
+      row.append(td(monthsInput(rt)));
+      row.append(tdc(fmtFullDate(routeEndDate(rt))));
+      row.append(td(routeBoardSelect(rt)));
+      row.append(td(changeMonthsInput(rt)));
+      row.append(td(lastRateUpdateInput(rt)));
+      row.append(tdc(fmtFullDate(routeNextRateUpdateDate(rt))));
+      row.append(td(routeIndexSelect(rt)));
+      row.append(td(inferRouteKind(rt)==='fixed'?roIn('—'):inferRouteKind(rt)==='prime'?roIn('פריים'):sel(rt,'anchorType',['','פק"מ','אג"ח'])));
+      row.append(td(percentInput(rt,'anchor',()=>rt.useGeneralRate=false)));
+      row.append(td(percentInput(rt,'margin',()=>rt.useGeneralRate=false)));
+      row.append(td(totalAnnualRateInput(rt)));
+      row.append(tdc(fmtPct(c.effRate)));
+      row.append(td(routeAnnualIndexInput(rt,c)));
+      row.append(tdc(fmt(c.S)));
+      row.append(tdc(fmt(c.T)));
+      const routeRisk=riskRuleForRoute(rt);
+      row.append(tdc(`${num(routeRisk.risk).toFixed(1)}/5 · קנס ${routeRisk.exitPenalty}`));
+      row.append(key==='current'?td(inp(rt,'exitFee','number','0.01')):tdc(fmtMoney(num(rt.exitFee))));
+      const up=el('button',{cls:'iconbtn',title:'העבר למעלה'},'↑');
+      up.disabled=i===0;
+      up.onclick=()=>{[routes[i-1],routes[i]]=[routes[i],routes[i-1]];renderMixes();recalc();};
+      const down=el('button',{cls:'iconbtn',title:'העבר למטה'},'↓');
+      down.disabled=i===routes.length-1;
+      down.onclick=()=>{[routes[i+1],routes[i]]=[routes[i],routes[i+1]];renderMixes();recalc();};
+      const del=el('button',{cls:'iconbtn del',title:'מחק מסלול'},'✕');
+      del.onclick=()=>{routes.splice(i,1);renderMixes();recalc();};
+      row.append(el('td',{},el('div',{cls:'rowact'},up,down,del)));
+      tb.append(row);
+    });
+    const trow=el('tr',{cls:'totrow'});
+    trow.append(el('td',{},'סה״כ'));
+    ['',routes.reduce((s,r)=>s+num(r.sharePct),0).toFixed(2)+'%',fmt(m.E),m.avgYears.toFixed(1),'',fmt(m.avgYears*12),fmtFullDate(addMonths(mixStartDate(key),m.maxN)),'','','','','','','','',fmtPct(m.avgRate),'','',fmt(m.firstPay),fmt(m.total),`רמה ${mixRisk(routes).level} · ${mixRisk(routes).label} (${mixRisk(routes).score.toFixed(2)}/5)`,fmtMoney(m.exitFee),'']
+      .forEach(x=>trow.append(el('td',{},x)));
+    tb.append(trow);
+    tbl.append(tb); sc.append(tbl); body.append(sc);
+
+    const add=el('button',{cls:'btn alt'},'+ הוסף מסלול');
+    add.disabled=routes.length>=10;
+    add.onclick=()=>{if(routes.length>=10)return;routes.push(blankRoute());MIX_OPEN[key]=true;renderMixes();recalc();};
+    const calculate=el('button',{cls:'btn green'},'חשב לפי טווח ההחזר');
+    calculate.onclick=()=>{calculateMixToRange(key);renderMixes();renderSummary();recalc();};
+    const controlItems=[add];
+    if(key==='current'){
+      const upload=el('button',{cls:'btn green'},'העלה דוח יתרות');
+      upload.onclick=()=>document.getElementById('mortgageReportFile').click();
+      controlItems.push(upload);
+    }else controlItems.push(calculate);
+    controlItems.push(el('span',{cls:'note',style:'align-self:center'},'ריבית כוללת (תשלום) = '+fmtMoney(m.interest)));
+    const controls=el('div',{style:'margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;align-items:center'},...controlItems);
+    const status=state.mixCalcStatus?.[key];
+    if(status)controls.append(el('span',{cls:'calcstatus '+(status.ok?'ok':'bad')},status.text));
+    body.append(controls);
+    if(key==='current')body.append(mortgageReportDropZone());
+    sec.append(body);
+    cont.append(sec);
+  });
+}
+
+/* ===================== סיכום והשוואה ===================== */
+function renderSummary(){
+  const mixes=MIXKEYS.filter(([k])=>state.mixes[k].length>0);
+  const data=mixes.map(([k,t])=>({key:k,title:t,m:calcMix(state.mixes[k],state.params)}));
+  const tbl=document.getElementById('cmpTbl'); tbl.innerHTML='';
+  if(!data.length){tbl.innerHTML='<tr><td>אין נתונים — הזן מסלולים בחוצץ תמהילים</td></tr>';document.getElementById('ruleWarn').style.display='none';
+    document.getElementById('chartMixToggles').innerHTML='';document.getElementById('existingComparisonPanel').style.display='none';if(window._charts)Object.values(window._charts).forEach(c=>c&&c.destroy()); return;}
+  const metrics=[
+    ['סכום משכנתא כולל עמלת היוון',d=>fmtMoney(d.key==='current'?d.m.totalAmount:d.m.E),null,d=>d.key==='current'?d.m.totalAmount:d.m.E],
+    ['עמלת היוון / קנס יציאה',d=>fmtMoney(d.m.exitFee), 'min',d=>d.m.exitFee],
+    ['תקופה ממוצעת (שנים)',d=>d.m.avgYears.toFixed(1),'min',d=>d.m.avgYears],
+    ['ריבית שנתית ממוצעת',d=>fmtPct(d.m.avgRate),'min',d=>d.m.avgRate],
+    ['החזר חודשי ראשון',d=>fmtMoney(d.m.firstPay),'min',d=>d.m.firstPay],
+    ['סה״כ תשלומים',d=>fmtMoney(d.m.total),'min',d=>d.m.total],
+    ['סה״כ תשלומי ריבית',d=>fmtMoney(d.m.interest),'min',d=>d.m.interest],
+    ['סה״כ תשלומי קרן',d=>fmtMoney(d.m.principal),null,d=>d.m.principal],
+    ['סה״כ הצמדה למדד',d=>fmtMoney(d.m.indexation),'min',d=>d.m.indexation],
+    ['רמת סיכון משוקללת',d=>{const r=mixRisk(state.mixes[d.key]);return `רמה ${r.level} · ${r.label} (${r.score.toFixed(2)}/5)`;},'min',d=>mixRisk(state.mixes[d.key]).score],
+  ];
+  const htr=el('tr'); htr.append(el('th',{},'מדד'));
+  data.forEach(d=>htr.append(el('th',{},d.title)));
+  tbl.append(el('thead',{},htr));
+  const tb=el('tbody');
+  metrics.forEach(([label,fn,dir,valFn])=>{
+    const row=el('tr');
+    row.append(el('td',{cls:'metric'},label));
+    let bestIdx=-1;
+    if(dir==='min'){ const vals=data.map(valFn); bestIdx=vals.indexOf(Math.min(...vals)); }
+    data.forEach((d,i)=>{
+      const c=el('td',{},fn(d));
+      if(i===bestIdx){c.style.background='#163a24';c.style.color='#bdf0cb';c.style.fontWeight='700';}
+      row.append(c);
+    });
+    tb.append(row);
+  });
+  tbl.append(tb);
+  checkRules(data);
+
+  renderChartToggles(data);
+  drawCharts();
+  renderExistingComparisonSelector();
+}
+function checkRules(data){
+  const box=document.getElementById('ruleWarn'); const msgs=[];
+  data.forEach(d=>{
+    const routes=state.mixes[d.key]; const E=d.m.E; if(E<=0)return;
+    let fixed=0, varShort=0;
+    routes.forEach((rt,i)=>{
+      const amt=num(rt.amount); const yrs=num(rt.years);
+      if(rt.rateType==='קבועה') fixed+=amt;
+      if(rt.rateType==='משתנה' && yrs<5) varShort+=amt;
+      if(num(rt.anchor)+num(rt.margin)<0) msgs.push(`${d.title}, מסלול ${i+1}: הריבית הכוללת שלילית ולכן החישוב הוגן ל־0%. יש לתקן את העוגן או המרווח.`);
+    });
+    if(fixed/E < 1/3 - 1e-9) msgs.push(`${d.title}: רכיב קבוע (${fmtPct(fixed/E)}) נמוך משליש מהסכום.`);
+    if(varShort/E > 1/3 + 1e-9) msgs.push(`${d.title}: משתנה עד 5 שנים (${fmtPct(varShort/E)}) חורג משליש מהסכום.`);
+  });
+  if(msgs.length){box.style.display='block';box.innerHTML='⚠️ בדיקות לתמהיל:<br>'+msgs.join('<br>');}
+  else box.style.display='none';
+}
+window._charts={};
+let CHART_VISIBLE={};
+const CHART_COLORS={current:'#f59e0b',t1:'#3b82f6',t2:'#22c55e',t3:'#a855f7',t4:'#ef4444',t5:'#06b6d4'};
+function renderChartToggles(data){
+  const box=document.getElementById('chartMixToggles');box.innerHTML='';
+  data.forEach(d=>{
+    if(CHART_VISIBLE[d.key]===undefined)CHART_VISIBLE[d.key]=true;
+    const label=el('label',{cls:'charttoggle',style:`--toggle-color:${CHART_COLORS[d.key]}`});
+    const input=el('input',{type:'checkbox'});
+    input.checked=CHART_VISIBLE[d.key];
+    input.onchange=()=>{CHART_VISIBLE[d.key]=input.checked;drawCharts();};
+    label.append(input,el('span',{cls:'dot'}),el('span',{},d.title));box.append(label);
+  });
+}
+function drawCharts(){
+  const selected=MIXKEYS.filter(([key])=>state.mixes[key]?.length>0&&CHART_VISIBLE[key]!==false)
+    .map(([key,title])=>({key,title,m:calcMix(state.mixes[key],state.params)}));
+  const maxN=Math.max(1,...selected.map(d=>d.m.maxN||0));
+  const labels=Array.from({length:maxN},(_,i)=>i+1);
+  const gridc='#2b3a52', txtc='#93a4bd';
+  const lineOptions={responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:txtc}}},
+    scales:{x:{ticks:{color:txtc,maxTicksLimit:12},grid:{color:gridc},title:{display:true,text:'חודש',color:txtc}},
+            y:{ticks:{color:txtc,callback:v=>fmt(v)},grid:{color:gridc}}}};
+  function mk(id,datasets){
+    if(window._charts[id])window._charts[id].destroy();
+    window._charts[id]=new Chart(document.getElementById(id),{type:'line',
+      data:{labels,datasets},options:lineOptions});
+  }
+  const series=selected.map(d=>({...d,s:mixSeries(state.mixes[d.key],state.params,maxN)}));
+  mk('chartBalance',series.flatMap(d=>{
+    const color=CHART_COLORS[d.key];
+    return [
+      {label:`${d.title} — יתרת קרן`,data:d.s.bal,borderColor:color,backgroundColor:color+'18',fill:false,pointRadius:0,borderWidth:2,tension:.15},
+      {label:`${d.title} — הצמדה`,data:d.s.indexBal,borderColor:color,borderDash:[5,4],fill:false,pointRadius:0,borderWidth:1.5,tension:.15}
+    ];
+  }));
+  mk('chartPay',series.map(d=>({label:d.title,data:d.s.pay,borderColor:CHART_COLORS[d.key],fill:false,pointRadius:0,borderWidth:2,tension:.15})));
+  if(window._charts.cmp)window._charts.cmp.destroy();
+  window._charts.cmp=new Chart(document.getElementById('chartCompare'),{type:'bar',
+    data:{labels:['סה״כ תשלומים','תשלומי ריבית','תשלומי קרן','החזר חודשי התחלתי','הצמדה למדד'],datasets:selected.map(d=>({
+      label:d.title,
+      data:[d.m.total,d.m.interest,d.m.principal,d.m.firstPay,d.m.indexation].map(Math.round),
+      backgroundColor:CHART_COLORS[d.key]+'bb',
+      borderColor:CHART_COLORS[d.key],
+      borderWidth:1
+    }))},
+    options:{responsive:true,plugins:{legend:{labels:{color:txtc}}},
+      scales:{x:{ticks:{color:txtc},grid:{color:gridc}},
+        y:{ticks:{color:txtc,callback:v=>fmt(v)},grid:{color:gridc},title:{display:true,text:'₪',color:txtc}}}}});
+  if(window._charts.chartRiskCompare)window._charts.chartRiskCompare.destroy();
+  window._charts.chartRiskCompare=new Chart(document.getElementById('chartRiskCompare'),{type:'bar',
+    data:{labels:selected.map(d=>d.title),datasets:[{
+      label:'רמת סיכון',
+      data:selected.map(d=>mixRisk(state.mixes[d.key]).score),
+      backgroundColor:selected.map(d=>CHART_COLORS[d.key]+'bb'),
+      borderColor:selected.map(d=>CHART_COLORS[d.key]),
+      borderWidth:1
+    }]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:txtc},grid:{color:gridc}},y:{min:0,max:5,ticks:{color:txtc,stepSize:1},grid:{color:gridc},title:{display:true,text:'רמת סיכון 0–5',color:txtc}}}}});
+}
+function renderExistingComparisonSelector(){
+  const panel=document.getElementById('existingComparisonPanel');
+  const select=document.getElementById('existingCompareSelect');
+  const hasCurrent=(state.mixes.current||[]).length>0;
+  const clocks=MIXKEYS.filter(([key])=>/^t[1-5]$/.test(key)&&(state.mixes[key]||[]).length>0);
+  panel.style.display=hasCurrent&&clocks.length?'block':'none';
+  if(!hasCurrent||!clocks.length){
+    ['chartExistingBalance','chartExistingPay','chartExistingCosts','chartExistingRisk'].forEach(id=>{if(window._charts[id]){window._charts[id].destroy();delete window._charts[id];}});
+    return;
+  }
+  const previous=select.value;select.innerHTML='';
+  clocks.forEach(([key,title])=>select.append(el('option',{value:key},title)));
+  if(clocks.some(([key])=>key===previous))select.value=previous;
+  drawExistingComparison();
+}
+function drawExistingComparison(){
+  const key=document.getElementById('existingCompareSelect')?.value;
+  if(!key||!(state.mixes.current||[]).length||!(state.mixes[key]||[]).length)return;
+  const currentMix=calcMix(state.mixes.current,state.params),clockMix=calcMix(state.mixes[key],state.params);
+  const maxN=Math.max(1,currentMix.maxN,clockMix.maxN);
+  const currentSeries=mixSeries(state.mixes.current,state.params,maxN);
+  const clockSeries=mixSeries(state.mixes[key],state.params,maxN);
+  const labels=Array.from({length:maxN},(_,i)=>i+1);
+  const clockTitle=MIXKEYS.find(([mixKey])=>mixKey===key)?.[1]||key;
+  const gridc='#2b3a52',txtc='#93a4bd',currentColor=CHART_COLORS.current,clockColor=CHART_COLORS[key];
+  const lineOptions={responsive:true,interaction:{mode:'index',intersect:false},plugins:{legend:{labels:{color:txtc}}},
+    scales:{x:{ticks:{color:txtc,maxTicksLimit:12},grid:{color:gridc},title:{display:true,text:'חודש',color:txtc}},
+      y:{ticks:{color:txtc,callback:v=>fmt(v)},grid:{color:gridc}}}};
+  const lineChart=(id,currentData,clockData)=>{
+    if(window._charts[id])window._charts[id].destroy();
+    window._charts[id]=new Chart(document.getElementById(id),{type:'line',data:{labels,datasets:[
+      {label:'משכנתא קיימת',data:currentData,borderColor:currentColor,fill:false,pointRadius:0,borderWidth:2,tension:.15},
+      {label:clockTitle,data:clockData,borderColor:clockColor,fill:false,pointRadius:0,borderWidth:2,tension:.15}
+    ]},options:lineOptions});
+  };
+  lineChart('chartExistingBalance',currentSeries.bal.map((v,i)=>v+currentSeries.indexBal[i]),clockSeries.bal.map((v,i)=>v+clockSeries.indexBal[i]));
+  lineChart('chartExistingPay',currentSeries.pay,clockSeries.pay);
+  if(window._charts.chartExistingCosts)window._charts.chartExistingCosts.destroy();
+  window._charts.chartExistingCosts=new Chart(document.getElementById('chartExistingCosts'),{type:'bar',
+    data:{labels:['סה״כ תשלומים','תשלומי ריבית','תשלומי קרן','החזר חודשי התחלתי','הצמדה למדד'],datasets:[
+      {label:'משכנתא קיימת',data:[currentMix.total,currentMix.interest,currentMix.principal,currentMix.firstPay,currentMix.indexation],backgroundColor:currentColor},
+      {label:clockTitle,data:[clockMix.total,clockMix.interest,clockMix.principal,clockMix.firstPay,clockMix.indexation],backgroundColor:clockColor}
+    ]},
+    options:{responsive:true,plugins:{legend:{labels:{color:txtc}}},scales:{x:{ticks:{color:txtc},grid:{color:gridc}},y:{ticks:{color:txtc,callback:v=>fmt(v)},grid:{color:gridc}}}}});
+  if(window._charts.chartExistingRisk)window._charts.chartExistingRisk.destroy();
+  const currentRisk=mixRisk(state.mixes.current),clockRisk=mixRisk(state.mixes[key]);
+  window._charts.chartExistingRisk=new Chart(document.getElementById('chartExistingRisk'),{type:'bar',
+    data:{labels:['משכנתא קיימת',clockTitle],datasets:[{
+      label:'רמת סיכון',
+      data:[currentRisk.score,clockRisk.score],
+      backgroundColor:[currentColor,clockColor]
+    }]},
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{ticks:{color:txtc},grid:{color:gridc}},y:{min:0,max:5,ticks:{color:txtc,stepSize:1},grid:{color:gridc},title:{display:true,text:'רמת סיכון 0–5',color:txtc}}}}});
+}
+
+/* ===================== לוחות סילוקין ===================== */
+function addMonths(dateStr,k){
+  const d=dateStr?new Date(dateStr+'T12:00:00'):new Date();
+  if(isNaN(d))return null;
+  const day=d.getDate();
+  const r=new Date(d);
+  r.setDate(1);
+  r.setMonth(r.getMonth()+Math.round(num(k)));
+  r.setDate(Math.min(day,new Date(r.getFullYear(),r.getMonth()+1,0).getDate()));
+  return r;
+}
+function fmtDate(d){if(!d)return'';return d.toLocaleDateString('he-IL',{month:'2-digit',year:'numeric'});}
+function fmtFullDate(d){if(!d)return'';return d.toLocaleDateString('he-IL',{day:'2-digit',month:'2-digit',year:'numeric'});}
+function mortgageStartDate(){return state.financial?.date||today();}
+function routeStartDate(rt){return rt.startDateOverride||mortgageStartDate();}
+function routeEndDate(rt){return addMonths(routeStartDate(rt),Math.round(num(rt.years)*12));}
+function periodEndDate(months){return addMonths(mortgageStartDate(),Math.round(num(months)));}
+function routeNextRateUpdateDate(rt){
+  if(inferRouteKind(rt)!=='variable'||num(rt.changeMonths)<=0)return null;
+  let next=addMonths(rt.lastRateUpdateDate||routeStartDate(rt),Math.round(num(rt.changeMonths)));
+  const now=new Date(today()+'T00:00:00');
+  let guard=0;
+  while(next&&next<now&&guard<200){
+    next=addMonths(fmtIsoDate(next),Math.round(num(rt.changeMonths)));
+    guard++;
+  }
+  return next;
+}
+function fmtIsoDate(d){return d?d.toISOString().slice(0,10):'';}
+function mixSettings(key){state.mixSettings=state.mixSettings||{};state.mixSettings[key]=state.mixSettings[key]||{};return state.mixSettings[key];}
+function applyMixSettingsToRoutes(key){
+  const settings=mixSettings(key), routes=state.mixes?.[key]||[];
+  const takenToday=!!settings.takenToday;
+  routes.forEach(route=>{
+    route.takenToday=takenToday;
+    route.dailyInterest=takenToday;
+    route.forceActualIndex=takenToday;
+    route.startDateOverride=takenToday?today():'';
+    if(route.useGeneralRate)syncRouteGeneralRate(route);
+  });
+}
+function setMixTakenToday(key,checked){
+  mixSettings(key).takenToday=!!checked;
+  applyMixSettingsToRoutes(key);
+  renderMixes();renderSummary();fillSchMixSel();renderSchedule();recalc();
+}
+function mixStartDate(key){return mixSettings(key).takenToday?today():mortgageStartDate();}
+function buildCombined(routes){
+  const per=routes.map(rt=>calcRoute(rt,state.params));
+  const maxN=Math.max(0,...per.map(c=>c.n));
+  const rows=[]; let cum=0;
+  for(let m=1;m<=maxN;m++){
+    let bal=0,indexBal=0,pay=0,prin=0,intr=0,idxPrin=0,idxIntr=0;
+    per.forEach(c=>{ if(m<=c.n){bal+=c.baseL[m]||0;indexBal+=c.indexBal[m]||0;pay+=c.M[m]||0;prin+=c.prin[m]||0;intr+=c.intr[m]||0;idxPrin+=c.idxPrin[m]||0;idxIntr+=c.idxIntr[m]||0;} });
+    cum+=pay;
+    rows.push({m,bal,indexBal,pay,prin,intr,idxPrin,idxIntr,cum});
+  }
+  return {rows,maxN,per};
+}
+function routeRows(c){
+  const rows=[];
+  for(let m=1;m<=c.n;m++) rows.push({m,bal:c.baseL[m]||0,indexBal:c.indexBal[m]||0,pay:c.M[m]||0,prin:c.prin[m]||0,intr:c.intr[m]||0,idxPrin:c.idxPrin[m]||0,idxIntr:c.idxIntr[m]||0,cum:c.cum[m]||0});
+  return rows;
+}
+function toYearly(rows){
+  const out=[];
+  for(let y=0;y*12<rows.length;y++){
+    const seg=rows.slice(y*12,y*12+12); if(!seg.length)break;
+    out.push({m:'שנה '+(y+1), bal:seg[0].bal, indexBal:seg[0].indexBal,
+      pay:seg.reduce((s,r)=>s+r.pay,0), prin:seg.reduce((s,r)=>s+r.prin,0),
+      intr:seg.reduce((s,r)=>s+r.intr,0), idxPrin:seg.reduce((s,r)=>s+r.idxPrin,0),
+      idxIntr:seg.reduce((s,r)=>s+r.idxIntr,0), cum:seg[seg.length-1].cum, _firstMonth:y*12+1});
+  }
+  return out;
+}
+const SCH_COLS=['#','תאריך','יתרת הקרן','יתרת הצמדה','תשלום','תשלום קרן','תשלום ריבית','השפעת מדד לקרן','השפעת מדד לריבית','סה״כ תשלומים'];
+function scheduleTable(rows,startDate,yearly){
+  const sc=el('div',{cls:'scroll'}); const t=el('table');
+  const htr=el('tr'); SCH_COLS.forEach(h=>htr.append(el('th',{},h))); t.append(el('thead',{},htr));
+  const tb=el('tbody');
+  rows.forEach(r=>{
+    const tr=el('tr');
+    tr.append(el('td',{},String(r.m)));
+    const mi=yearly?(r._firstMonth-1):(r.m-1);
+    tr.append(el('td',{},fmtDate(addMonths(startDate,mi))));
+    tr.append(el('td',{},fmt(r.bal)));
+    tr.append(el('td',{cls:r.indexBal?'':'calccell'},fmt(r.indexBal)));
+    tr.append(el('td',{},fmt(r.pay)));
+    tr.append(el('td',{},fmt(r.prin)));
+    tr.append(el('td',{},fmt(r.intr)));
+    tr.append(el('td',{cls:r.idxPrin?'':'calccell'},fmt(r.idxPrin)));
+    tr.append(el('td',{cls:r.idxIntr?'':'calccell'},fmt(r.idxIntr)));
+    tr.append(el('td',{},fmt(r.cum)));
+    tb.append(tr);
+  });
+  t.append(tb); sc.append(t); return sc;
+}
+function renderSchedule(){
+  const cont=document.getElementById('scheduleContainer'); if(!cont)return; cont.innerHTML='';
+  const selEl=document.getElementById('schMixSel'); const key=selEl?selEl.value:'';
+  if(!key||!state.mixes[key]||!state.mixes[key].length){cont.innerHTML='<div class="panel">אין מסלולים להצגה בתמהיל זה.</div>';return;}
+  const yearly=document.getElementById('schView').value==='year';
+  const showRoutes=document.getElementById('schRoutes').checked;
+  applyMixSettingsToRoutes(key);
+  const startDate=mixStartDate(key);
+  const routes=state.mixes[key];
+  const comb=buildCombined(routes);
+  const m=calcMix(routes,state.params);
+  const sumPanel=el('div',{cls:'panel'});
+  sumPanel.append(el('h2',{},'מסלול מסכם — '+MIXKEYS.find(x=>x[0]===key)[1]));
+  sumPanel.append(el('p',{cls:'hint'},`סכום ${fmtMoney(m.E)} · תשלום ראשון ${fmtMoney(m.firstPay)} · סה״כ ${fmtMoney(m.total)} · ריבית כוללת ${fmtMoney(m.interest)} · ${comb.maxN} חודשים`));
+  let crows=comb.rows; if(yearly)crows=toYearly(crows);
+  sumPanel.append(scheduleTable(crows,startDate,yearly));
+  cont.append(sumPanel);
+  if(showRoutes){
+    comb.per.forEach((c,i)=>{
+      if(c.n<=0)return;
+      const rt=routes[i];
+      const p=el('div',{cls:'panel'});
+      const head=el('div',{style:'display:flex;gap:12px;flex-wrap:wrap;align-items:baseline'});
+      head.append(el('h2',{style:'margin:0'},'מסלול '+(i+1)));
+      head.append(el('span',{cls:'hint',style:'margin:0'},
+        `${fmtMoney(num(rt.amount))} · ${num(rt.years)} שנים · ${rt.board||'שפיצר'}${rt.balloon?' · '+rt.balloon:''} · ריבית ${fmtPct(c.annualRate)}${rt.indexType&&rt.indexType!=='ללא'?' · צמוד '+rt.indexType:''}`));
+      p.append(head);
+      let rr=routeRows(c); if(yearly)rr=toYearly(rr);
+      p.append(scheduleTable(rr,startDate,yearly));
+      cont.append(p);
+    });
+  }
+}
+function exportScheduleCSV(){
+  const key=document.getElementById('schMixSel').value;
+  if(!key||!state.mixes[key].length){alert('אין נתונים');return;}
+  applyMixSettingsToRoutes(key);
+  const startDate=mixStartDate(key);
+  const comb=buildCombined(state.mixes[key]);
+  const title=MIXKEYS.find(x=>x[0]===key)[1];
+  let csv='﻿';
+  const line=r=>[r.m,fmtDate(addMonths(startDate,r.m-1)),Math.round(r.bal),Math.round(r.indexBal),Math.round(r.pay),Math.round(r.prin),Math.round(r.intr),Math.round(r.idxPrin),Math.round(r.idxIntr),Math.round(r.cum)].join(',')+'\n';
+  csv+='מסלול מסכם - '+title+'\n'+SCH_COLS.join(',')+'\n';
+  comb.rows.forEach(r=>csv+=line(r));
+  comb.per.forEach((c,i)=>{ if(c.n<=0)return;
+    csv+='\nמסלול '+(i+1)+'\n'+SCH_COLS.join(',')+'\n';
+    routeRows(c).forEach(r=>csv+=line(r));
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='לוח_סילוקין_'+title+'.csv';a.click();
+}
+function fillSchMixSel(){
+  const sel=document.getElementById('schMixSel'); if(!sel)return; const prev=sel.value; sel.innerHTML='';
+  MIXKEYS.filter(([k])=>state.mixes[k].length>0).forEach(([k,t])=>sel.append(el('option',{value:k},t)));
+  if([...sel.options].some(o=>o.value===prev))sel.value=prev;
+}
+
+/* ===================== טבלאות עזר ===================== */
+function renderRef(){
+  normalizeGeneralRateBands();
+  toggleInsuranceRateEditor(INSURANCE_RATE_EDITOR_OPEN);
+  toggleBuildingRateEditor(BUILDING_RATE_EDITOR_OPEN);
+  const generalTbl=document.getElementById('generalRatesTbl');
+  generalTbl.innerHTML='';
+  const generalRows=[
+    ['fixedUnlinked','קבועה לא צמודה'],
+    ['fixedLinked','קבועה צמודת מדד'],
+    ['variable36Unlinked','משתנה כל 36 חודשים — לא צמודה'],
+    ['variable36Linked','משתנה כל 36 חודשים — צמודת מדד'],
+    ['variable60Linked','משתנה כל 60 חודשים — צמודת מדד'],
+    ['variable60Unlinked','משתנה כל 60 חודשים — לא צמודה'],
+    ['variable18_24Linked','משתנה כל 18/24 חודשים — צמודת מדד'],
+    ['variable18_24Unlinked','משתנה כל 18/24 חודשים — לא צמודה'],
+    ['prime','פריים']
+  ];
+  const gh=el('tr');
+  ['מסלול','משנה','עד שנה','עוגן (%)','מרווח (%)','ריבית כוללת',''].forEach(x=>gh.append(el('th',{},x)));
+  generalTbl.append(el('thead',{},gh));
+  const gb=el('tbody');
+  generalRows.forEach(([key,label])=>{
+    state.generalRateBands[key].forEach((rate,i)=>{
+      const tr=el('tr');
+      tr.append(el('td',{},i===0?label:''));
+      const from=inp(rate,'from','number','1');from.setAttribute('min','1');from.setAttribute('max','30');
+      const to=inp(rate,'to','number','1');to.setAttribute('min','1');to.setAttribute('max','30');
+      const anchor=percentInput(rate,'anchor');
+      const margin=percentInput(rate,'margin');
+      [from,to,anchor,margin].forEach(control=>control.onchange=()=>{renderRef();recalc();});
+      const del=el('button',{cls:'iconbtn del',title:'מחק מדרגת תקופה'},'✕');
+      del.disabled=state.generalRateBands[key].length===1;
+      del.onclick=()=>{state.generalRateBands[key].splice(i,1);renderRef();recalc();};
+      tr.append(td(from),td(to),td(anchor),td(margin),tdc(fmtPct(num(rate.anchor)+num(rate.margin))),td(del));
+      gb.append(tr);
+    });
+    const addTr=el('tr');
+    addTr.append(el('td',{},''));
+    const addCell=el('td',{colspan:'6'});
+    const add=el('button',{cls:'btn alt'},'+ הוסף מדרגת תקופה ל־'+label);
+    add.onclick=()=>{
+      const bands=state.generalRateBands[key],last=bands[bands.length-1];
+      bands.push({from:Math.min(30,num(last.to)+1),to:30,anchor:num(last.anchor),margin:num(last.margin)});
+      renderRef();
+    };
+    addCell.append(add);addTr.append(addCell);gb.append(addTr);
+  });
+  generalTbl.append(gb);
+  const applyRow=el('tr');
+  const applyCell=el('td',{colspan:'7'});
+  const applyButton=el('button',{cls:'btn green'},'החל את הריביות על כל השעונים שנטענו');
+  applyButton.onclick=()=>{state.currentMortgagePurpose='housing';applyGeneralRatesToLoadedMixes();};
+  applyCell.append(applyButton);applyRow.append(applyCell);gb.append(applyRow);
+
+  const allPurposeTbl=document.getElementById('allPurposeRatesTbl');
+  allPurposeTbl.innerHTML='';
+  const aph=el('tr');
+  ['מסלול','משנה','עד שנה','עוגן (%)','מרווח (%)','ריבית כוללת',''].forEach(x=>aph.append(el('th',{},x)));
+  allPurposeTbl.append(el('thead',{},aph));
+  const apb=el('tbody');
+  generalRows.forEach(([key,label])=>{
+    state.allPurposeRateBands[key].forEach((rate,i)=>{
+      const tr=el('tr');
+      tr.append(el('td',{},i===0?label:''));
+      const from=inp(rate,'from','number','1');from.setAttribute('min','1');from.setAttribute('max','30');
+      const to=inp(rate,'to','number','1');to.setAttribute('min','1');to.setAttribute('max','30');
+      const anchor=percentInput(rate,'anchor');
+      const margin=percentInput(rate,'margin');
+      [from,to,anchor,margin].forEach(control=>control.onchange=()=>{renderRef();recalc();});
+      const del=el('button',{cls:'iconbtn del',title:'מחק מדרגת תקופה'},'✕');
+      del.disabled=state.allPurposeRateBands[key].length===1;
+      del.onclick=()=>{state.allPurposeRateBands[key].splice(i,1);renderRef();recalc();};
+      tr.append(td(from),td(to),td(anchor),td(margin),tdc(fmtPct(num(rate.anchor)+num(rate.margin))),td(del));
+      apb.append(tr);
+    });
+    const addTr=el('tr');
+    addTr.append(el('td',{},''));
+    const addCell=el('td',{colspan:'6'});
+    const add=el('button',{cls:'btn alt'},'+ הוסף מדרגת תקופה ל־'+label);
+    add.onclick=()=>{
+      const bands=state.allPurposeRateBands[key],last=bands[bands.length-1];
+      bands.push({from:Math.min(30,num(last.to)+1),to:30,anchor:num(last.anchor),margin:num(last.margin)});
+      renderRef();
+    };
+    addCell.append(add);addTr.append(addCell);apb.append(addTr);
+  });
+  allPurposeTbl.append(apb);
+  const apApplyRow=el('tr'),apApplyCell=el('td',{colspan:'7'});
+  const apApply=el('button',{cls:'btn green'},'החל את ריביות לכל מטרה על ההצעות');
+  apApply.onclick=()=>{state.currentMortgagePurpose='allPurpose';applyGeneralRatesToLoadedMixes();};
+  apApplyCell.append(apApply);apApplyRow.append(apApplyCell);apb.append(apApplyRow);
+
+  state.datedRateBands=state.datedRateBands||[];
+  const datedTbl=document.getElementById('datedRatesTbl');
+  if(datedTbl){
+    datedTbl.innerHTML='';
+    const dh=el('tr');
+    ['תאריך ריבית','מטרה','מסלול','משנה','עד שנה','עוגן (%)','מרווח (%)','ריבית כוללת',''].forEach(x=>dh.append(el('th',{},x)));
+    datedTbl.append(el('thead',{},dh));
+    const db=el('tbody');
+    state.datedRateBands.forEach((rate,i)=>{
+      const tr=el('tr');
+      const date=inp(rate,'date','date');
+      const purpose=sel(rate,'purpose',['housing','allPurpose','all']);
+      [...purpose.options].forEach(option=>option.textContent=option.value==='housing'?'דיור':option.value==='allPurpose'?'כל מטרה / נכס קיים':'הכול');
+      const route=sel(rate,'routeKey',rateRouteOptions().map(([value])=>value));
+      [...route.options].forEach(option=>{
+        option.textContent=rateRouteOptions().find(([value])=>value===option.value)?.[1]||option.value;
+      });
+      const from=inp(rate,'from','number','1');from.setAttribute('min','1');from.setAttribute('max','30');
+      const to=inp(rate,'to','number','1');to.setAttribute('min','1');to.setAttribute('max','30');
+      const anchor=percentInput(rate,'anchor');
+      const margin=percentInput(rate,'margin');
+      [date,purpose,route,from,to,anchor,margin].forEach(control=>control.onchange=()=>{renderRef();recalc();});
+      const del=el('button',{cls:'iconbtn del',title:'מחק ריבית לפי תאריך'},'✕');
+      del.onclick=()=>{state.datedRateBands.splice(i,1);renderRef();recalc();};
+      tr.append(td(date),td(purpose),td(route),td(from),td(to),td(anchor),td(margin),tdc(fmtPct(num(rate.anchor)+num(rate.margin))),td(del));
+      db.append(tr);
+    });
+    if(!state.datedRateBands.length){
+      const tr=el('tr');tr.append(el('td',{colspan:'9'},'אין עדיין ריביות לפי תאריך. לחץ על „הוסף ריבית לפי תאריך”.'));db.append(tr);
+    }
+    datedTbl.append(db);
+  }
+
+  const cols=['בנק','קבועה לא צמודה','קבועה צמודת מדד','משתנה צמ׳ מדד (מק״מ)','משתנה צמ׳ מדד (אג״ח)','דולר','אירו','פריים','לא צמודה מק״מ','לא צמודה אג״ח'];
+  const rt=document.getElementById('ratesTbl'); rt.innerHTML='';
+  const htr=el('tr'); cols.forEach(c=>htr.append(el('th',{},c))); rt.append(el('thead',{},htr));
+  const tb=el('tbody');
+  if(!state.rates){ state.rates={}; BANKS.forEach(b=>state.rates[b]=Array(9).fill(0)); }
+  BANKS.forEach(b=>{
+    const row=el('tr'); row.append(el('td',{},b)); const arr=state.rates[b];
+    for(let i=0;i<9;i++){ const ip=el('input',{type:'number',step:'0.0001',value:arr[i]}); ip.oninput=()=>{arr[i]=parseFloat(ip.value)||0;}; row.append(el('td',{},ip)); }
+    tb.append(row);
+  });
+  rt.append(tb);
+
+  const rk=document.getElementById('riskTbl'); rk.innerHTML='';
+  const rh=el('tr');['סוג מסלול','משינוי בחודש','עד שינוי בחודש','הצמדה למדד','סכנה לקנס יציאה','רמת סיכון (1–5)',''].forEach(c=>rh.append(el('th',{},c)));rk.append(el('thead',{},rh));
+  const rtb=el('tbody');
+  state.riskRules.forEach((rule,i)=>{
+    const tr=el('tr');
+    const kind=sel(rule,'routeKind',['all','fixed','variable','prime']);
+    [...kind.options].forEach(option=>option.textContent=({all:'הכול',fixed:'קבועה',variable:'משתנה',prime:'פריים'})[option.value]);
+    const from=inp(rule,'fromMonths','number','1'),to=inp(rule,'toMonths','number','1');
+    const indexed=sel(rule,'indexed',['הכול','כן','לא']);
+    const penalty=sel(rule,'exitPenalty',['נמוך','בינוני','גבוה']);
+    const risk=inp(rule,'risk','number','0.1');risk.setAttribute('min','1');risk.setAttribute('max','5');
+    [from,to,risk].forEach(control=>{const original=control.onchange;control.onchange=()=>{original();rule.risk=Math.min(5,Math.max(1,num(rule.risk)));renderRef();recalc();};});
+    const del=el('button',{cls:'iconbtn del',title:'מחק כלל'},'✕');del.disabled=state.riskRules.length===1;
+    del.onclick=()=>{state.riskRules.splice(i,1);renderRef();recalc();};
+    tr.append(td(kind),td(from),td(to),td(indexed),td(penalty),td(risk),td(del));rtb.append(tr);
+  });
+  rk.append(rtb);
+
+  const lists={'מצב משפחתי':['רווק','נשוי','גרוש','אלמן'],'סוג לוח':['שפיצר','קרן שווה'],'בלון/גרייס':['בלון מלא','בלון חלקי','גרייס מלא','גרייס חלקי'],'סוג ריבית':['קבועה','משתנה'],'סוג הצמדה':['ללא','מדד','דולר','אירו'],'סוג עוגן':['פריים','פק״מ','אג״ח']};
+  const lt=document.getElementById('listsTbl'); lt.innerHTML='';
+  const keys=Object.keys(lists); const lh=el('tr'); keys.forEach(k=>lh.append(el('th',{},k))); lt.append(el('thead',{},lh));
+  const maxr=Math.max(...keys.map(k=>lists[k].length)); const ltb=el('tbody');
+  for(let i=0;i<maxr;i++){const tr=el('tr');keys.forEach(k=>tr.append(el('td',{},lists[k][i]||'')));ltb.append(tr);}lt.append(ltb);
+}
+function addRiskRule(){
+  state.riskRules.push({routeKind:'all',fromMonths:1,toMonths:360,indexed:'הכול',exitPenalty:'בינוני',risk:2});
+  renderRef();recalc();
+}
+function rateRouteOptions(){
+  return [
+    ['fixedUnlinked','קבועה לא צמודה'],
+    ['fixedLinked','קבועה צמודת מדד'],
+    ['variable36Unlinked','משתנה כל 36 חודשים — לא צמודה'],
+    ['variable36Linked','משתנה כל 36 חודשים — צמודת מדד'],
+    ['variable60Linked','משתנה כל 60 חודשים — צמודת מדד'],
+    ['variable60Unlinked','משתנה כל 60 חודשים — לא צמודה'],
+    ['variable18_24Linked','משתנה כל 18/24 חודשים — צמודת מדד'],
+    ['variable18_24Unlinked','משתנה כל 18/24 חודשים — לא צמודה'],
+    ['prime','פריים']
+  ];
+}
+function addDatedRate(){
+  state.datedRateBands=state.datedRateBands||[];
+  state.datedRateBands.push({date:today(),purpose:'housing',routeKey:'fixedUnlinked',from:4,to:30,anchor:.0462,margin:0});
+  renderRef();recalc();
+}
+
+/* ===================== recalc / חיווט ===================== */
+let _t;
+function recalc(){ clearTimeout(_t); _t=setTimeout(()=>{
+  renderMixes(); renderSummary();
+  const tot=state.personal.reduce((s,b)=>s+num(b.income),0);
+  const ki=document.getElementById('kTotIncome'); if(ki)ki.textContent=fmtMoney(tot);
+  updateSimulatorName();
+  if(document.getElementById('v-financial').classList.contains('active')) renderFinancial();
+  if(document.getElementById('v-schedule').classList.contains('active')){fillSchMixSel();renderSchedule();}
+  if(document.getElementById('v-insurance').classList.contains('active'))renderInsurance();
+  if(document.getElementById('v-prepayment').classList.contains('active'))renderPrepayment();
+  try{localStorage.setItem('mortgage-mix-simulator',JSON.stringify(state));}catch(e){}
+},120); }
+
+function updateSimulatorName(){
+  const names=state.personal.map(b=>String(b.first||'').trim()).filter(Boolean);
+  const button=document.getElementById('clientSimulatorName');
+  if(button) button.textContent='סימולטור · '+(names.length?names.join(' ו'):'שם לקוח');
+}
+
+function renderAll(){renderPersonal();renderFinancial();renderParams();renderMixes();renderSummary();fillSchMixSel();renderSchedule();renderRef();renderInsurance();renderPrepayment();refreshTemplateSelectors();selectTemplateForEdit(TEMPLATE_EDIT_KEY);updateSimulatorName();}
+
+document.getElementById('tabs').addEventListener('click',e=>{
+  const t=e.target.closest('.tab'); if(!t)return;
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  t.classList.add('active'); document.getElementById('v-'+t.dataset.v).classList.add('active');
+  if(t.dataset.v==='summary')drawCharts();
+  if(t.dataset.v==='schedule'){fillSchMixSel();renderSchedule();}
+  if(t.dataset.v==='templates')selectTemplateForEdit(TEMPLATE_EDIT_KEY);
+  if(t.dataset.v==='insurance')renderInsurance();
+  if(t.dataset.v==='prepayment')renderPrepayment();
+});
+
+function saveJSON(){const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='נתוני_משכנתא.json';a.click();}
+function prepareState(){
+  if(!state.indexCalcMode)state.indexCalcMode='annual';
+  if(!Array.isArray(state.monthlyIndices))state.monthlyIndices=[];
+  if(!state.mixCalcStatus)state.mixCalcStatus={};
+  if(!state.mixSettings)state.mixSettings={};
+  if(!Array.isArray(state.datedRateBands))state.datedRateBands=[];
+  if(!state.clockTemplates)state.clockTemplates=cloneClockTemplates();
+  Object.values(state.clockTemplates).forEach(template=>template.conditions=Object.assign({shortenFixed:true,linkedFixedFirst:true},template.conditions||{}));
+  if(!Array.isArray(state.riskRules)||!state.riskRules.length)state.riskRules=defaultRiskRules();
+  if(!state.insurance)state.insurance={borrowerIndex:0,sourceMix:'manual',company:'כלל',amount:'',annualRate:4.5,years:20};
+  if(!state.buildingInsurance)state.buildingInsurance={structureType:'פרטי',buildingAge:'',insuredAmount:'',previouslyInsured:'לא',hadClaims:'לא',claimsCount:0};
+  if(!state.prepayment)state.prepayment={mixKey:'current',routeIndex:0,balance:'',annualLoanRate:4.5,annualAverageRate:3.5,remainingMonths:240,monthsToRateChange:240,repaymentPct:100,reductionPct:0};
+  state.personal.forEach(person=>{if(!person.gender)person.gender='זכר';if(!person.smoker)person.smoker='לא';});
+  state.riskRules.forEach(rule=>{if(!rule.routeKind)rule.routeKind='all';});
+  if(!['housing','allPurpose','mixed'].includes(state.currentMortgagePurpose))state.currentMortgagePurpose='housing';
+  if(!state.currentPurposeShares)state.currentPurposeShares=calculateCurrentPurposeShares(state.mixes?.current||[]);
+  (state.mixes?.current||[]).forEach(route=>{if(!route.loanPurpose)route.loanPurpose=state.currentMortgagePurpose==='allPurpose'?'allPurpose':'housing';});
+  state.generalRates=Object.assign(defaultGeneralRates(),state.generalRates||{});
+  normalizeGeneralRateBands();
+  Object.entries(state.mixes||{}).forEach(([mixKey,routes])=>{
+    const total=routes.reduce((s,r)=>s+num(r.amount),0);
+    routes.forEach(rt=>{
+      rt.kind=inferRouteKind(rt);
+      if(rt.useGeneralRate==null)rt.useGeneralRate=mixKey!=='current';
+      if(rt.sharePct==null||rt.sharePct==='')rt.sharePct=total>0?num(rt.amount)/total*100:'';
+      if(!rt.board)rt.board='שפיצר';
+      if(rt.indexPct==null||rt.indexPct==='')rt.indexPct=rt.indexType==='מדד'?1:0;
+      if(rt.kind==='fixed'){rt.rateType='קבועה';if(rt.margin==null||rt.margin==='')rt.margin=0;if(!['ללא','מדד'].includes(rt.indexType))rt.indexType='ללא';rt.years=Math.min(30,Math.max(4,num(rt.years)||20));}
+      if(rt.kind==='variable'){rt.rateType='משתנה';rt.changeMonths=num(rt.changeMonths)||60;if(!['ללא','מדד'].includes(rt.indexType))rt.indexType='ללא';rt.years=nearestAllowedYears(rt,num(rt.years)||20);}
+      if(rt.kind==='prime'){rt.rateType='משתנה';rt.anchorType='פריים';rt.changeMonths=1;rt.indexType='ללא';rt.indexPct=0;rt.years=Math.min(30,Math.max(4,num(rt.years)||20));}
+      syncRouteGeneralRate(rt);
+    });
+    applyMixSettingsToRoutes(mixKey);
+  });
+}
+function loadJSON(ev){const f=ev.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{state=JSON.parse(r.result);prepareState();renderAll();}catch(e){alert('קובץ לא תקין');}};r.readAsText(f);ev.target.value='';}
+function loadExample(){state=exampleState();MIX_OPEN.t1=true;renderAll();}
+function resetAll(){
+  if(!confirm('לאפס את נתוני הלקוח והחישובים? טבלאות העזר, הפרמטרים והתבניות הקבועות יישמרו.'))return;
+  const fixedSettings={
+    params:state.params,
+    generalRates:state.generalRates,
+    generalRateBands:state.generalRateBands,
+    allPurposeRateBands:state.allPurposeRateBands,
+    datedRateBands:state.datedRateBands,
+    clockTemplates:state.clockTemplates,
+    riskRules:state.riskRules,
+    rates:state.rates,
+    insuranceRateOverrides:state.insuranceRateOverrides,
+    insuranceRateEditorProfile:state.insuranceRateEditorProfile
+  };
+  state=Object.assign(defaultState(),fixedSettings);
+  prepareState();
+  renderAll();
+  try{localStorage.setItem('mortgage-mix-simulator',JSON.stringify(state));}catch(e){}
+}
+
+try{
+  const saved=localStorage.getItem('mortgage-mix-simulator');
+  state=saved?JSON.parse(saved):exampleState();
+}catch(e){state=exampleState();}
+prepareState();
+MIX_OPEN.t1=true;
+renderAll();
+</script>
+</body>
+</html>
