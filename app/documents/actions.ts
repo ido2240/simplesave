@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 
 const ALLOWED = ["application/pdf", "image/jpeg", "image/png"];
@@ -9,7 +9,7 @@ const MAX_BYTES = 10 * 1024 * 1024;
 
 export async function uploadDocument(docId: string, formData: FormData) {
   const user = await requireRole("client");
-  const db = supabase();
+  const db = await supabaseServer();
   const { data: doc } = await db
     .from("documents").select("id, request_id, kind, requests!inner(client_id)").eq("id", docId).maybeSingle();
   const ownerId = (doc as { requests?: { client_id?: string } } | null)?.requests?.client_id;

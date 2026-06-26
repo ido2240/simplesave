@@ -3,7 +3,7 @@ import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import DocStatusBadge from "@/components/DocStatusBadge";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { getActiveRequest } from "@/lib/requests";
 import { requirePaid } from "@/lib/billing";
 import { uploadDocument } from "./actions";
@@ -16,7 +16,7 @@ export default async function DocumentsPage() {
   }
   await requirePaid(req.id);
 
-  const db = supabase();
+  const db = await supabaseServer();
   const [{ data: auths }, { data: docs }] = await Promise.all([
     db.from("authorizations").select("signed").eq("request_id", req.id),
     db.from("documents").select("id, kind, file_name, status, note").eq("request_id", req.id).order("kind"),

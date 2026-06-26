@@ -2,7 +2,7 @@ import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { getActiveRequest } from "@/lib/requests";
 import { requirePaid } from "@/lib/billing";
 import { signAuthorization } from "./actions";
@@ -15,7 +15,7 @@ export default async function AuthorizationsPage() {
   }
   await requirePaid(req.id);
 
-  const { data: auths } = await supabase()
+  const { data: auths } = await (await supabaseServer())
     .from("authorizations").select("id, bank, signed").eq("request_id", req.id).order("bank");
   const list = auths ?? [];
   const signed = list.filter((a) => a.signed).length;

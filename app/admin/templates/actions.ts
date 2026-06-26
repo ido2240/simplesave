@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 import type { RouteSpec } from "@/lib/engine";
 
@@ -9,7 +9,7 @@ import type { RouteSpec } from "@/lib/engine";
  *  Route kinds/index types are preserved; only the percentages change. */
 export async function updateTemplate(templateId: string, formData: FormData) {
   await requireRole("admin");
-  const db = supabase();
+  const db = await supabaseServer();
 
   const { data: row } = await db
     .from("clock_templates").select("routes").eq("id", templateId).maybeSingle();

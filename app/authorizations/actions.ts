@@ -1,12 +1,12 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 
 export async function signAuthorization(authId: string) {
   const user = await requireRole("client");
-  const db = supabase();
+  const db = await supabaseServer();
   const { data: authz } = await db
     .from("authorizations")
     .select("id, request_id, requests!inner(client_id)")

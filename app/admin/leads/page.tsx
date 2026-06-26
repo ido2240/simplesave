@@ -2,13 +2,13 @@ import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { shekel } from "@/lib/format";
 import { assignAdvisor } from "../actions";
 
 export default async function LeadsPage() {
   await requireRole("admin");
-  const db = supabase();
+  const db = await supabaseServer();
   const [{ data: requests }, { data: advisors }] = await Promise.all([
     db.from("requests").select("id, status, advisor_id, client:profiles!requests_client_id_fkey(full_name), request_details(loan_amount)").order("created_at", { ascending: false }),
     db.from("profiles").select("id, full_name").eq("role", "advisor"),

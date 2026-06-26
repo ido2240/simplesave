@@ -3,7 +3,7 @@ import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import DashHeader, { DashStat } from "@/components/DashHeader";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { shekel } from "@/lib/format";
 
 const SERVICE_LABEL: Record<string, string> = {
@@ -31,7 +31,7 @@ export default async function AdvisorPage({
 }) {
   const user = await requireRole("advisor");
   const tab = (await searchParams).tab === "tasks" ? "tasks" : "clients";
-  const db = supabase();
+  const db = await supabaseServer();
 
   const { data } = await db
     .from("requests")

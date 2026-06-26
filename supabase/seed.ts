@@ -1,26 +1,52 @@
-// Seed Supabase: economic params, 5 clock templates, demo users + one request.
-// Run: npx tsx --env-file=.env.local supabase/seed.ts
+// Seed Supabase: demo auth users (with passwords), economic params + anchors,
+// 5 clock templates, and one demo request graph.
+//
+//   npx tsx --env-file=.env.local supabase/seed.ts   (or: npm run seed)
+//
+// Uses the SERVICE ROLE key — seeding creates auth users and bypasses RLS.
 import { createClient } from "@supabase/supabase-js";
-import {
-  CLOCK_KEYS,
-  CLOCK_ROUTE_SPECS,
-  CLOCK_STRATEGY_NAMES,
-} from "../lib/engine";
+import { CLOCK_KEYS, CLOCK_ROUTE_SPECS, CLOCK_STRATEGY_NAMES } from "../lib/engine";
 
 const url = process.env.SUPABASE_URL!;
-const key = process.env.SUPABASE_ANON_KEY!;
-if (!url || !key) throw new Error("Missing SUPABASE_URL / SUPABASE_ANON_KEY (use --env-file=.env.local)");
+const key = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+if (!url || !key) {
+  throw new Error("Missing SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY (seeding needs the service role; use --env-file=.env.local)");
+}
 const db = createClient(url, key, { auth: { persistSession: false } });
 
 const DUPLICATE_OF: Record<string, string | null> = {
   clock1: null, clock2: null, clock3: null, clock4: "clock1", clock5: "clock3",
 };
 
+// Demo accounts. Real Supabase Auth identities — the on_auth_user_created trigger
+// provisions the matching profiles row (with role) from user_metadata.
+const DEMO_USERS = [
+  { email: "admin@simplesave.co.il", password: "Admin1234!", full_name: "מנהל מערכת", role: "admin" },
+  { email: "dan@simplesave.co.il", password: "Advisor1234!", full_name: "דן יועץ", role: "advisor" },
+  { email: "yossi@simplesave.co.il", password: "Client1234!", full_name: "יוסי לקוח", role: "client" },
+  { email: "maya@simplesave.co.il", password: "Client1234!", full_name: "מאיה לקוחה", role: "client" },
+];
+
+async function ensureUser(u: typeof DEMO_USERS[number]) {
+  const { error } = await db.auth.admin.createUser({
+    email: u.email,
+    password: u.password,
+    email_confirm: true,
+    user_metadata: { full_name: u.full_name, role: u.role },
+  });
+  if (error && !/already|exists|registered/i.test(error.message)) throw error;
+}
+
 async function main() {
-  // economic params
-  // Defaults verbatim from the reference simulator: index expectations
-  // {'מדד':0.03,'דולר':0.03,'אירו':0.015} and prime anchor .0456.
-  await db.from("economic_params").upsert({ id: "singleton", cpi: 0.03, usd: 0.03, eur: 0.015, prime_rate: 0.0456, fixed_anchor: 0.0462, variable_anchor: 0.047 });
+  // Demo auth users (idempotent) → profiles via trigger.
+  for (const u of DEMO_USERS) await ensureUser(u);
+
+  // economic params — reference defaults: index {'מדד':0.03,'דולר':0.03,'אירו':0.015},
+  // anchors prime .0456 / fixed .0462 / variable .047.
+  await db.from("economic_params").upsert({
+    id: "singleton", cpi: 0.03, usd: 0.03, eur: 0.015,
+    prime_rate: 0.0456, fixed_anchor: 0.0462, variable_anchor: 0.047,
+  });
 
   // clock templates (reference verbatim; duplicates flagged)
   for (let i = 0; i < CLOCK_KEYS.length; i++) {
@@ -35,20 +61,12 @@ async function main() {
     });
   }
 
-  // demo users
-  const users = [
-    { email: "admin@simplesave.co.il", full_name: "מנהל מערכת", role: "admin" },
-    { email: "dan@simplesave.co.il", full_name: "דן יועץ", role: "advisor" },
-    { email: "yossi@simplesave.co.il", full_name: "יוסי לקוח", role: "client" },
-    { email: "maya@simplesave.co.il", full_name: "מאיה לקוחה", role: "client" },
-  ];
-  await db.from("profiles").upsert(users, { onConflict: "email" });
   const { data: profiles } = await db.from("profiles").select("id, email");
   const byEmail = Object.fromEntries((profiles ?? []).map((p) => [p.email, p.id]));
-
-  // a demo request for Yossi, advised by Dan
   const yossi = byEmail["yossi@simplesave.co.il"];
   const dan = byEmail["dan@simplesave.co.il"];
+
+  // one demo request for Yossi, advised by Dan (reset to a single clean copy)
   await db.from("requests").delete().eq("client_id", yossi);
   const { data: req } = await db
     .from("requests")
@@ -72,7 +90,7 @@ async function main() {
     { request_id: rid, kind: "דפי חשבון בנק" },
   ]);
 
-  console.log("✓ Seed complete: params, 5 clocks, 4 users, 1 demo request");
+  console.log("✓ Seed complete: 4 auth users, params + anchors, 5 clocks, 1 demo request");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

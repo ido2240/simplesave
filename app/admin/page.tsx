@@ -3,10 +3,10 @@ import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import DashHeader, { DashStat } from "@/components/DashHeader";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 
 async function count(table: string, filter?: [string, string]): Promise<number> {
-  let q = supabase().from(table).select("*", { count: "exact", head: true });
+  let q = (await supabaseServer()).from(table).select("*", { count: "exact", head: true });
   if (filter) q = q.eq(filter[0], filter[1]);
   const { count } = await q;
   return count ?? 0;

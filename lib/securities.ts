@@ -1,6 +1,6 @@
 // Collateral / securities (בטחונות) — read helpers + shared options.
 import "server-only";
-import { supabase } from "./supabase";
+import { supabaseServer } from "./supabase-server";
 
 export interface Security {
   id: string;
@@ -20,7 +20,7 @@ export const SECURITY_OPTIONS = [
 ];
 
 export async function listSecurities(requestId: string): Promise<Security[]> {
-  const { data } = await supabase()
+  const { data } = await (await supabaseServer())
     .from("securities")
     .select("id, request_id, description, kind")
     .eq("request_id", requestId)

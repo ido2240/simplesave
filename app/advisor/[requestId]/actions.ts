@@ -1,14 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 import type { AppUser } from "@/lib/session";
 
 /** Confirm the signed-in advisor owns this request; returns the db handle + advisor. */
-async function ownedRequest(requestId: string): Promise<{ db: ReturnType<typeof supabase>; user: AppUser } | null> {
+async function ownedRequest(requestId: string): Promise<{ db: Awaited<ReturnType<typeof supabaseServer>>; user: AppUser } | null> {
   const user = await requireRole("advisor");
-  const db = supabase();
+  const db = await supabaseServer();
   const { data } = await db.from("requests").select("advisor_id").eq("id", requestId).maybeSingle();
   if (!data || data.advisor_id !== user.id) return null;
   return { db, user };
@@ -16,7 +16,7 @@ async function ownedRequest(requestId: string): Promise<{ db: ReturnType<typeof 
 
 export async function reviewDocument(docId: string, status: "תקין" | "דרוש תיקון", formData: FormData) {
   const user = await requireRole("advisor");
-  const db = supabase();
+  const db = await supabaseServer();
   const { data: doc } = await db
     .from("documents").select("id, request_id, requests!inner(advisor_id)").eq("id", docId).maybeSingle();
   const advisorId = (doc as { requests?: { advisor_id?: string } } | null)?.requests?.advisor_id;

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { shekel } from "@/lib/format";
 import { SERVICE_PRICE_ILS } from "@/lib/billing";
 import { confirmPayment } from "../actions";
@@ -10,7 +10,7 @@ export default async function HostedCheckout({ searchParams }: { searchParams: P
   const user = await requireRole("client");
   const { rid } = await searchParams;
   if (!rid) notFound();
-  const { data: req } = await supabase().from("requests").select("id, client_id").eq("id", rid).maybeSingle();
+  const { data: req } = await (await supabaseServer()).from("requests").select("id, client_id").eq("id", rid).maybeSingle();
   if (!req || req.client_id !== user.id) notFound();
 
   return (

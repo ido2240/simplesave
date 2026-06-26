@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 import {
   computeLoanAmountNew,
@@ -26,7 +26,7 @@ export async function saveNewMortgage(
   formData: FormData,
 ): Promise<SaveState> {
   const user = await requireRole("client");
-  const db = supabase();
+  const db = await supabaseServer();
 
   const propertyValue = Number(formData.get("propertyValue") || 0);
   const equity = Number(formData.get("equity") || 0);

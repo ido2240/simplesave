@@ -2,14 +2,14 @@ import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { updateParams } from "../actions";
 
 const field = "num w-28 rounded-lg border border-rule-strong bg-paper px-2.5 py-1.5 text-left outline-none focus:border-manager";
 
 export default async function ParamsPage() {
   await requireRole("admin");
-  const { data } = await supabase()
+  const { data } = await (await supabaseServer())
     .from("economic_params")
     .select("cpi, usd, eur, prime_rate, fixed_anchor, variable_anchor")
     .eq("id", "singleton")

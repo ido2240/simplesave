@@ -1,6 +1,6 @@
 // Bridges the database (manager-editable config) to the pure engine.
 import "server-only";
-import { supabase } from "./supabase";
+import { supabaseServer } from "./supabase-server";
 import { generateClock, type ClockResult, type MarketParams, type RouteSpec } from "./engine";
 
 export interface ClockTemplateRow {
@@ -13,7 +13,7 @@ export interface ClockTemplateRow {
 }
 
 export async function loadMarketParams(): Promise<MarketParams> {
-  const { data } = await supabase()
+  const { data } = await (await supabaseServer())
     .from("economic_params")
     .select("cpi, usd, eur")
     .eq("id", "singleton")
@@ -29,7 +29,7 @@ export interface RateAnchors {
 
 /** Live, manager-editable base rate per route kind. */
 export async function loadRateAnchors(): Promise<RateAnchors> {
-  const { data } = await supabase()
+  const { data } = await (await supabaseServer())
     .from("economic_params")
     .select("prime_rate, fixed_anchor, variable_anchor")
     .eq("id", "singleton")
@@ -51,7 +51,7 @@ function applyAnchors(routes: RouteSpec[], rates: RateAnchors): RouteSpec[] {
 }
 
 export async function loadClockTemplates(): Promise<ClockTemplateRow[]> {
-  const { data } = await supabase()
+  const { data } = await (await supabaseServer())
     .from("clock_templates")
     .select("id, name, routes, duplicate_of, display_order, recommended")
     .order("display_order", { ascending: true });

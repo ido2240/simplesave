@@ -3,7 +3,7 @@ import AppFooter from "@/components/AppFooter";
 import NewMortgageForm, { type BorrowerSeed, type FormDefaults } from "@/components/NewMortgageForm";
 import { requireRole } from "@/lib/session";
 import { getActiveRequest } from "@/lib/requests";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 
 export default async function NewMortgagePage() {
   const user = await requireRole("client");
@@ -14,7 +14,7 @@ export default async function NewMortgagePage() {
   let additionalIncome = 0;
   let fixedExpenses = 0;
   if (req?.id) {
-    const { data } = await supabase()
+    const { data } = await (await supabaseServer())
       .from("borrowers")
       .select("full_name, birth_date, net_income, is_property_owner, additional_income, fixed_expenses")
       .eq("request_id", req.id);

@@ -1,7 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 
 export async function updateParams(formData: FormData) {
@@ -12,7 +12,7 @@ export async function updateParams(formData: FormData) {
   const primeRate = Number(formData.get("primeRate") || 0) / 100;
   const fixedAnchor = Number(formData.get("fixedAnchor") || 0) / 100;
   const variableAnchor = Number(formData.get("variableAnchor") || 0) / 100;
-  await supabase().from("economic_params").upsert({
+  await (await supabaseServer()).from("economic_params").upsert({
     id: "singleton", cpi, usd, eur,
     prime_rate: primeRate, fixed_anchor: fixedAnchor, variable_anchor: variableAnchor,
   });
@@ -24,6 +24,6 @@ export async function updateParams(formData: FormData) {
 export async function assignAdvisor(requestId: string, formData: FormData) {
   await requireRole("admin");
   const advisorId = String(formData.get("advisorId") || "") || null;
-  await supabase().from("requests").update({ advisor_id: advisorId }).eq("id", requestId);
+  await (await supabaseServer()).from("requests").update({ advisor_id: advisorId }).eq("id", requestId);
   revalidatePath("/admin/leads");
 }

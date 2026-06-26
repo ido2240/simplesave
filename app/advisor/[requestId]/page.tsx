@@ -5,7 +5,7 @@ import AppFooter from "@/components/AppFooter";
 import DocStatusBadge from "@/components/DocStatusBadge";
 import MessagesThread, { type ThreadMessage } from "@/components/MessagesThread";
 import { requireRole } from "@/lib/session";
-import { supabase } from "@/lib/supabase";
+import { supabaseServer } from "@/lib/supabase-server";
 import { listSecurities, SECURITY_OPTIONS } from "@/lib/securities";
 import { reviewDocument, updateClientDetails, addSecurity, removeSecurity } from "./actions";
 
@@ -14,7 +14,7 @@ const numField = "num w-full rounded-lg border border-rule-strong bg-paper px-2.
 export default async function AdvisorClientPage({ params }: { params: Promise<{ requestId: string }> }) {
   const user = await requireRole("advisor");
   const { requestId } = await params;
-  const db = supabase();
+  const db = await supabaseServer();
 
   const { data: req } = await db
     .from("requests").select("id, advisor_id, chosen_clock_id, client:profiles!requests_client_id_fkey(full_name, email)")

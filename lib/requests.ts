@@ -1,6 +1,6 @@
 // Supabase queries around a client's active mortgage request.
 import "server-only";
-import { supabase } from "./supabase";
+import { supabaseServer } from "./supabase-server";
 
 export interface RequestDetails {
   property_value: number; equity: number; loan_amount: number;
@@ -19,7 +19,7 @@ export interface ActiveRequest {
 
 /** Most recent request for a client, with details. */
 export async function getActiveRequest(clientId: string): Promise<ActiveRequest | null> {
-  const { data: req } = await supabase()
+  const { data: req } = await (await supabaseServer())
     .from("requests")
     .select("id, status, service_status, chosen_clock_id, advisor_id")
     .eq("client_id", clientId)
@@ -27,7 +27,7 @@ export async function getActiveRequest(clientId: string): Promise<ActiveRequest 
     .limit(1)
     .maybeSingle();
   if (!req) return null;
-  const { data: details } = await supabase()
+  const { data: details } = await (await supabaseServer())
     .from("request_details")
     .select("property_value, equity, loan_amount, loan_type, property_source, term_years, min_pay, max_pay")
     .eq("request_id", req.id)
