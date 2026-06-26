@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { loginByEmail } from "./actions";
+import { loginByEmail, quickLogin } from "./actions";
+
+const DEMO = [
+  { role: "admin" as const, label: "מנהל", email: "admin@simplesave.co.il", password: "Admin1234!" },
+  { role: "advisor" as const, label: "יועץ · דן", email: "dan@simplesave.co.il", password: "Advisor1234!" },
+  { role: "client" as const, label: "לקוח · יוסי", email: "yossi@simplesave.co.il", password: "Client1234!" },
+];
 
 const inputCls = "w-full rounded-xl border border-rule-strong bg-paper px-4 py-3 outline-none focus:border-primary";
 
@@ -45,6 +51,24 @@ export default function LoginPage() {
           אין לכם חשבון?{" "}
           <Link href="/register" className="font-semibold text-primary hover:underline">הרשמה</Link>
         </p>
+
+        <div className="mt-7 border-t border-rule pt-6">
+          <p className="mb-3 text-[13px] font-semibold text-ink-3">כניסה מהירה — חשבונות הדגמה</p>
+          <div className="grid grid-cols-3 gap-2">
+            {DEMO.map((d) => (
+              <form key={d.role} action={quickLogin.bind(null, d.role)}>
+                <button className="btn-ghost press w-full px-2 py-2.5 text-xs font-semibold">{d.label}</button>
+              </form>
+            ))}
+          </div>
+          <div className="mt-3 space-y-0.5 text-[11px] text-ink-3">
+            {DEMO.map((d) => (
+              <p key={d.role} dir="ltr" className="text-left">
+                <span className="font-semibold">{d.email}</span> · {d.password}
+              </p>
+            ))}
+          </div>
+        </div>
       </div>
     </main>
   );

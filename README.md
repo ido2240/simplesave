@@ -52,15 +52,16 @@ npm run dev                     # http://localhost:3000
 
 ### משתמשי הדגמה
 
-| תפקיד | אימייל |
-|------|--------|
-| מנהל | `admin@simplesave.co.il` |
-| יועץ | `dan@simplesave.co.il` |
-| לקוח | `yossi@simplesave.co.il` |
-| לקוח | `maya@simplesave.co.il` |
+| תפקיד | אימייל | סיסמה |
+|------|--------|--------|
+| מנהל | `admin@simplesave.co.il` | `Admin1234!` |
+| יועץ | `dan@simplesave.co.il` | `Advisor1234!` |
+| לקוח | `yossi@simplesave.co.il` | `Client1234!` |
+| לקוח | `maya@simplesave.co.il` | `Client1234!` |
 
-הכניסה היא ללא סיסמה (הדגמה): בעמוד `/login` יש כפתורי "כניסה מהירה" לכל תפקיד.
-בייצור מחליפים ל-Supabase Auth (GoTrue) + RLS.
+ההתחברות היא **Supabase Auth אמיתי** (אימייל + סיסמה, RLS אכוף ברמת ה-DB). בעמוד
+`/login` יש גם כפתורי "כניסה מהירה" לחשבונות ההדגמה — כל אחד מבצע התחברות אמיתית
+בסיסמה ומפנה לאזור של התפקיד. הרשמה עצמית ב-`/register`.
 
 ---
 
