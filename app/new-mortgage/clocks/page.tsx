@@ -50,7 +50,7 @@ export default async function ClocksPage() {
         </div>
 
         <p className="mt-10 text-center text-xs text-ink-3">
-          חישוב במנוע מאומת מול הסימולטור המקורי. הצגה לצרכי הדגמה בלבד.
+          חישוב במנוע מאומת מול הסימולטור המקורי. אינו מהווה ייעוץ משכנתאי.
         </p>
       </main>
       <AppFooter />

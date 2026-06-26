@@ -71,7 +71,7 @@ export async function saveNewMortgage(
       .insert({ client_id: user.id, service: "new_mortgage", status: "clocks" })
       .select("id").single();
     requestId = data!.id;
-    // default onboarding rows for the demo
+    // default onboarding rows for a new request
     await db.from("authorizations").insert([
       { request_id: requestId, bank: "בנק הפועלים" },
       { request_id: requestId, bank: "בנק לאומי" },

@@ -50,7 +50,7 @@ export default async function CheckoutPage() {
             )}
           </div>
         </div>
-        <p className="mt-4 text-center text-xs text-ink-3">הדגמה: ספק סליקה מדומה, ללא חיוב אמיתי וללא טופס כרטיס.</p>
+        <p className="mt-4 text-center text-xs text-ink-3">סביבת בדיקה (Sandbox): ספק סליקה לבדיקה בלבד, ללא חיוב אמיתי. בפרודקשן ישולב ספק סליקה מאושר.</p>
       </main>
       <AppFooter />
     </>

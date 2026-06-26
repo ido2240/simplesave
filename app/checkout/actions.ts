@@ -13,7 +13,8 @@ export async function startCheckout() {
   redirect(`/checkout/hosted?rid=${req.id}`);
 }
 
-/** Server-side confirmation — the only path that unlocks the service (mock PSP). */
+/** Server-side confirmation — the only path that unlocks the service. Sandbox
+ *  payment provider for now; swap for a real PSP (e.g. Stripe) in production. */
 export async function confirmPayment(requestId: string) {
   const user = await requireRole("client");
   const db = supabase();

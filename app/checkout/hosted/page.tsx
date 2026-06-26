@@ -16,7 +16,7 @@ export default async function HostedCheckout({ searchParams }: { searchParams: P
   return (
     <main className="flex min-h-screen items-center justify-center p-6" style={{ background: "linear-gradient(135deg,#0c1838,#22409b)" }}>
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
-        <p className="lbl mb-1">תשלום מאובטח (הדגמה)</p>
+        <p className="lbl mb-1">תשלום מאובטח (סביבת בדיקה · Sandbox)</p>
         <h1 className="display mb-4 text-2xl font-bold">SimpleSave מלא</h1>
         <div className="mb-5 flex justify-between border-y border-rule py-3">
           <span>לתשלום</span><span className="num display font-bold">{shekel(SERVICE_PRICE_ILS)}</span>

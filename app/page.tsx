@@ -186,7 +186,7 @@ export default async function Home() {
           </div>
 
           <p className="mt-12 text-center text-xs text-ink-3">
-            כלי הדגמה — אינו מהווה ייעוץ משכנתאי או פיננסי מורשה.
+            המידע להמחשה בלבד ואינו מהווה ייעוץ משכנתאי או פיננסי מורשה.
           </p>
         </div>
       </main>
