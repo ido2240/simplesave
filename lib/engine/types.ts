@@ -15,9 +15,9 @@ export interface PurposeSplit {
 }
 
 export interface MarketParams {
-  cpi: number; // מדד
-  usd: number; // דולר
-  eur: number; // אירו
+  cpi: number; // expected annual CPI index
+  usd: number; // expected annual USD rate
+  eur: number; // expected annual EUR rate
 }
 
 /** A single mortgage track. Defaults mirror the reference blankRoute. */
@@ -92,7 +92,7 @@ export interface RiskRule {
   routeKind: string; // 'fixed' | 'variable' | 'prime' | 'all'
   fromMonths: number;
   toMonths: number;
-  indexed: string; // 'כן' | 'לא' | 'הכול'
+  indexed: string; // engine values 'כן' | 'לא' | 'הכול' (yes | no | all)
   exitPenalty: string;
   risk: number;
 }

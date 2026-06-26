@@ -41,7 +41,7 @@ async function main() {
   // Demo auth users (idempotent) → profiles via trigger.
   for (const u of DEMO_USERS) await ensureUser(u);
 
-  // economic params — reference defaults: index {'מדד':0.03,'דולר':0.03,'אירו':0.015},
+  // economic params — reference index expectations: CPI 0.03 / USD 0.03 / EUR 0.015,
   // anchors prime .0456 / fixed .0462 / variable .047.
   await db.from("economic_params").upsert({
     id: "singleton", cpi: 0.03, usd: 0.03, eur: 0.015,

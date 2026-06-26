@@ -1,4 +1,4 @@
--- Collateral / securities (בטחונות). Entered manually by the advisor/operations
+-- Collateral / securities. Entered manually by the advisor/operations
 -- after the mortgage is signed (spec §13). Demo access mirrors the other tables:
 -- RLS on with a permissive demo_all policy for the anon + authenticated roles.
 create table if not exists public.securities (

@@ -1,4 +1,4 @@
-// Collateral / securities (בטחונות) — read helpers + shared options.
+// Collateral / securities — read helpers + shared options.
 import "server-only";
 import { supabaseServer } from "./supabase-server";
 

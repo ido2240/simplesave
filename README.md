@@ -1,108 +1,171 @@
-# SimpleSave — פלטפורמת משכנתאות (Next.js + Supabase)
+# SimpleSave — Mortgage Comparison Platform (Next.js + Supabase)
 
-> **כלי הדגמה בלבד — אינו מהווה ייעוץ משכנתאי או פיננסי מורשה.**
+> **Educational demo only — not licensed mortgage or financial advice.**
 
-SimpleSave מחליף את שיחת הייעוץ הראשונית: לקוח עונה על שאלון עברי קצר ומקבל מיד
-**חמישה תמהילי משכנתא ("שעונים")** — כל אחד תערובת אחרת של מסלולים (קבועה / פריים /
-משתנה, צמודה או לא), עם החזר חודשי ראשון, עלות כוללת, פירוק קרן/ריבית, ומד-סיכון
-בצבע אחד. משם: חתימת כתבי הרשאה, העלאת מסמכים, צ'אט עם יועץ, ומעקב — על פני שלושה
-תפקידים (לקוח / יועץ / מנהל) שחולקים נתונים.
+SimpleSave replaces the initial mortgage-broker intake. A borrower answers a short
+Hebrew questionnaire and instantly receives **five mortgage-mix proposals ("clocks" /
+שעונים)** — each a different blend of tracks (fixed / prime / variable, indexed or not)
+with its first monthly payment, total lifetime cost, principal-vs-interest split, and a
+single-color risk gauge. From there the client signs bank-authorization letters, uploads
+documents, messages an advisor, and tracks the process — across three roles
+(**client / advisor / manager**) that share data under real row-level security.
 
-מנוע החישוב הוא **פורט TypeScript של מנוע פייתון מאומת**, שנבדק ב-parity מול אותו
-מנוע על 140 תרחישים.
+**Live:** https://ido-new-project.vercel.app
+
+The calculation engine is a faithful TypeScript port of a validated spreadsheet/HTML
+mortgage simulator, locked behind a parity gate so the math cannot silently regress.
+
+---
+
+## Demo accounts
+
+The login page (`/login`) has one-click "quick login" buttons; each performs a **real**
+email + password sign-in and routes you to that role's area.
+
+| Role | Email | Password | Lands on |
+|------|-------|----------|----------|
+| Manager | `admin@simplesave.co.il` | `Admin1234!` | `/admin` |
+| Advisor | `dan@simplesave.co.il` | `Advisor1234!` | `/advisor` |
+| Client | `yossi@simplesave.co.il` | `Client1234!` | `/personal` |
+| Client | `maya@simplesave.co.il` | `Client1234!` | `/personal` |
+
+New users can self-register at `/register`.
+
+---
+
+## What it does
+
+- **Questionnaire → 5 clocks.** Loan type, property source, value, equity, multiple
+  borrowers (name / birthdate / income / ownership), additional income, fixed expenses,
+  and a desired monthly-payment range. Validated against Bank-of-Israel-style lending
+  rules (LTV per deal type, max age, DTI), then five mortgage mixes are generated.
+- **Clock detail** with an amortization chart (principal vs. interest/indexation per year).
+- **Refinance.** Enter an existing mortgage and a goal; get five alternative mixes plus a
+  side-by-side comparison (monthly / total / interest / indexation / risk / savings).
+- **Service flow.** Bank-authorization letters, document upload (real file storage,
+  advisor review), collateral/securities, and a paywall-gated full service.
+- **Advisor area.** Client cards (current step / next action / stage), a tasks tab,
+  client-data editing, document review, and per-request messaging.
+- **Manager area.** Dashboard, lead assignment, the **live rate editor** (edit an anchor →
+  the clocks reprice), and clock-template editing.
 
 ---
 
 ## Tech stack
 
 - **Next.js 16** (App Router) + **TypeScript** (strict)
-- **Tailwind CSS v4** — עיצוב עברי RTL (Frank Ruhl Libre + Assistant)
-- **Supabase (Postgres)** — בסיס הנתונים; גישה צד-שרת
-- **Recharts** — גרף קרן/ריבית · **Vitest** — בדיקות מנוע + שער parity
-- **zod** — אימות גוף הבקשות ב-API
+- **Tailwind CSS v4** — Hebrew RTL design (Frank Ruhl Libre + Heebo)
+- **Supabase** — Postgres, **Auth (GoTrue)**, **Storage**, and **Row-Level Security**
+- **@supabase/ssr** — cookie-bound server client; the app queries the DB *as the user*
+- **Recharts** (amortization chart) · **Vitest** (engine + parity) · **zod** (API bodies)
+- **PWA** — installable manifest + service worker
 
 ---
 
-## אימות המנוע (parity)
+## The calculation engine (`lib/engine/`)
 
-המנוע ב-`lib/engine/` הוא פורט פונקציה-מול-פונקציה ממנוע הפייתון המקורי. שער ה-parity
-(`lib/engine/__tests__/parity.test.ts`) מריץ את אותה סוללת 140 התרחישים שמנוע
-הפייתון נבדק עליה, ומשווה ל-golden שנוצר ממנו:
+Pure functions, no React / Supabase / I/O. Layers:
+`core` (pmt, rounding, indexation) → `route` (Spitzer / equal-principal, balloon, grace) →
+`mix` (aggregate) → `risk` → `tuning` (fit a mix into a payment range) →
+`clocks` (5 templates) + `rules` (LTV / equity / DTI / age).
+
+### Parity gate
+
+`lib/engine/__tests__/parity.test.ts` runs the same battery the source engine was
+validated on and compares every number to a frozen `golden.json`:
 
 ```
-140 תרחישים (route / mix / risk / tune) · 164,491 ערכים מספריים
-הפרש מוחלט מקסימלי = 1.86e-9  → זהה (רעש נקודה צפה)
+140 cases (route / mix / risk / tune) · 167,099 numbers compared
+tolerance: rel 1e-9 / abs 1e-6  →  matches (floating-point noise only)
 ```
 
-`golden.json` הוקפא מתוך מנוע הפייתון לפני שהוסר; הבדיקה רצה עצמאית מולו.
+`golden.json` is the frozen oracle; the test runs against it independently. **Do not edit
+the engine math or the parity files** without keeping this green.
 
 ---
 
-## הרצה מקומית
+## Auth & security
+
+- **Real Supabase Auth** (email + password, bcrypt) — no mock/cookie bypass.
+- Server-only data access via `lib/supabase-server.ts`; `middleware.ts` refreshes the
+  session; `lib/session.ts` resolves the user + role from the profile.
+- **Row-Level Security on every table** (`supabase/migrations/0007_rls_hardening.sql`):
+  a client reads only their own rows, an advisor only assigned clients, a manager all;
+  config tables are read-only to authenticated users and writable only by managers;
+  Storage objects are scoped to the owning request. Verified end-to-end.
+
+---
+
+## Project structure
+
+```
+app/                 # App Router — pages, role areas, API routes, server actions
+components/           # ClockCard, RiskGauge, AmortizationChart, DashHeader, …
+lib/
+  engine/             # pure validated calculation engine (+ __tests__/parity)
+  supabase-server.ts  # cookie-bound authenticated server client
+  session.ts          # currentUser / requireUser / requireRole
+  engine-config.ts    # bridges DB config (rates, templates) → engine
+supabase/
+  migrations/         # 0001–0007 (schema, auth, anchors, storage, RLS)
+  seed.ts             # demo users + params + 5 clocks + a demo request
+reference/            # source simulator (parity oracle)
+```
+
+---
+
+## Local development
 
 ```bash
-cp .env.example .env.local      # מלאו SUPABASE_URL + SUPABASE_ANON_KEY
+cp .env.example .env.local      # fill SUPABASE_URL, SUPABASE_ANON_KEY, SUPABASE_SERVICE_ROLE_KEY
 npm install
-# הסכמה כבר הוחלה על פרויקט ה-Supabase (supabase/migrations/0001_init.sql)
-npm run seed                    # פרמטרים, 5 שעונים, משתמשי הדגמה, בקשה לדוגמה
+# apply supabase/migrations/0001..0007 to your Supabase project (SQL editor or CLI)
+npm run seed                    # demo users, params, 5 clocks, demo request (needs service role)
 npm run dev                     # http://localhost:3000
 ```
 
-> `npm run seed` רץ עם `--env-file=.env.local` (ראו `package.json`).
-
-### משתמשי הדגמה
-
-| תפקיד | אימייל | סיסמה |
-|------|--------|--------|
-| מנהל | `admin@simplesave.co.il` | `Admin1234!` |
-| יועץ | `dan@simplesave.co.il` | `Advisor1234!` |
-| לקוח | `yossi@simplesave.co.il` | `Client1234!` |
-| לקוח | `maya@simplesave.co.il` | `Client1234!` |
-
-ההתחברות היא **Supabase Auth אמיתי** (אימייל + סיסמה, RLS אכוף ברמת ה-DB). בעמוד
-`/login` יש גם כפתורי "כניסה מהירה" לחשבונות ההדגמה — כל אחד מבצע התחברות אמיתית
-בסיסמה ומפנה לאזור של התפקיד. הרשמה עצמית ב-`/register`.
+```bash
+npm test         # Vitest — engine + parity (must stay green)
+npm run lint     # eslint
+npm run build    # production build
+```
 
 ---
 
-## מבנה הפרויקט
+## Deployment (Vercel)
 
-```
-lib/engine/          # מנוע טהור (ללא React/DB/IO) — הליבה המאומתת
-  types.ts core.ts route.ts mix.ts risk.ts tuning.ts clocks.ts rules.ts
-  __tests__/parity.test.ts + golden.json   # שער ה-parity
-lib/                 # supabase, session (mock auth), engine-config, requests,
-                     # billing, payments, messages, format, api-schemas (zod)
-app/                 # App Router — דפי לקוח/יועץ/מנהל + app/api/* (route handlers)
-components/          # ClockCard, RiskGauge, AmortizationChart, ...
-supabase/            # migrations/0001_init.sql + seed.ts
-reference/           # הסימולטור המקורי (תיעוד — המקור למתמטיקה)
-PORT_PLAN.md         # מיפוי הפורט מ-Python ל-TypeScript
-```
+Set these in **Project → Settings → Environment Variables** (Production):
 
-## בדיקות ובנייה
+| Variable | Notes |
+|----------|-------|
+| `SUPABASE_URL` | — |
+| `SUPABASE_ANON_KEY` | sensitive |
+| `SUPABASE_SERVICE_ROLE_KEY` | **secret**, server-only (seed/admin); never `NEXT_PUBLIC_*` |
+| `PAYMENT_TO_INCOME_RATIO` | `0.38` |
+| `MAX_AGE_NEW_MORTGAGE` | `85` |
+| `MAX_AGE_REFINANCE` | `80` |
 
-```bash
-npm test     # Vitest — מנוע + שער parity
-npm run build
-npm run lint
-```
+Then `vercel --prod`. See `DEPLOY_READINESS.md` for the full deploy checklist.
 
-## הערות (החלטות שנשמרו מהמקור)
+---
 
-- **5 השעונים** = תבניות הרפרנס המאומתות; `clock4` כפיל מדויק של `clock1` ו-`clock5 ≈ clock3`
-  (מאפיין מקור) — נשמרים אך **מסומנים** במסך המנהל (`duplicate_of`).
-- **הצמדה** מחושבת שנתית (`annual/12`) — קירוב ענפי מקובל.
-- **יחס החזר 38%**, גיל מקס׳ 85 (משכנתא חדשה) / 80 (מחזור) — ניתנים להגדרה.
-- **ביטוח** ו**פרסור PDF יתרות** חסומים עד שיסופקו טבלאות התעריפים / מנוע הפרסור —
-  לא ממציאים מספרים.
+## Scope — v1 vs. deferred
 
-## דמו ב-2 דקות
+**In v1 (working):** real auth + RLS, the 5-clock engine, new-mortgage and refinance
+flows, documents/storage, authorizations, securities, advisor & manager areas, live rate
+editing, PWA — deployed and verified.
 
-1. `npm run dev` → פותחים `http://localhost:3000`.
-2. `/login` → "לקוח · יוסי".
-3. "משכנתא חדשה" → ממלאים שאלון → **חמישה שעונים** עם החזרים שונים ומד-סיכון.
-4. "פירוט" על שעון → גרף קרן/ריבית. "בחר" → נשמר באזור האישי.
-5. אזור אישי → "שדרג" → תשלום מדומה → נפתחים כתבי הרשאה ומסמכים.
-6. `/login` → "מנהל" → "פרמטרים כלכליים" → משנים את המדד → השעונים מתעדכנים.
-7. `/login` → "יועץ · דן" → רואים את יוסי, מאשרים מסמך, שולחים הודעה.
+**Deferred to v0.2** (intentionally stubbed, never faked):
+
+| Item | Why |
+|------|-----|
+| Insurance pricing | No official tariff tables — the stub returns `available:false`. |
+| Balance-report PDF parsing | Needs a real parse engine; refinance uses manual entry. |
+| Real payments | Checkout runs a clearly-flagged **Sandbox** provider; the paywall is enforced server-side. Wire Stripe when keys are provided. |
+| Eligibility (זכאות) / multi-language / post-execution mortgage tracking | Out of MVP scope. |
+
+---
+
+## License
+
+MIT.
