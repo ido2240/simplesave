@@ -1,13 +1,13 @@
 const STYLE: Record<string, string> = {
-  "לא הועלה": "text-ink-3 border-rule",
-  "ממתין לבדיקה": "text-ochre border-ochre",
-  "תקין": "text-forest border-forest",
-  "דרוש תיקון": "text-brick border-brick",
+  "לא הועלה": "text-ink-3 bg-paper-2",
+  "ממתין לבדיקה": "text-risk-mid bg-[#fbf1e2]",
+  תקין: "text-risk-low bg-[#e7f6ef]",
+  "דרוש תיקון": "text-risk-high bg-[#fceeec]",
 };
 
 export default function DocStatusBadge({ status }: { status: string }) {
   return (
-    <span className={`border px-2 py-0.5 text-xs font-bold ${STYLE[status] ?? "text-ink-3 border-rule"}`}>
+    <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${STYLE[status] ?? "text-ink-3 bg-paper-2"}`}>
       {status}
     </span>
   );

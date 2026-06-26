@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 import { requireRole } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { getActiveRequest } from "@/lib/requests";
@@ -10,7 +11,7 @@ export default async function AuthorizationsPage() {
   const user = await requireRole("client");
   const req = await getActiveRequest(user.id);
   if (!req) {
-    return (<><AppHeader /><main className="mx-auto max-w-xl flex-1 px-5 py-20 text-center"><Link href="/new-mortgage" className="bg-ink px-5 py-2.5 font-bold text-paper">התחל שאלון</Link></main></>);
+    return (<><AppHeader /><main className="mx-auto max-w-xl flex-1 px-5 py-20 text-center"><Link href="/new-mortgage" className="btn-primary px-6 py-3">התחל שאלון</Link></main><AppFooter /></>);
   }
   await requirePaid(req.id);
 
@@ -23,25 +24,25 @@ export default async function AuthorizationsPage() {
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-10">
-        <p className="lbl mb-1">שלב 2 · ייפוי כוח</p>
-        <h1 className="display mb-2 text-4xl font-black">כתבי הרשאה</h1>
+      <main className="mx-auto w-full max-w-2xl flex-1 px-5 py-12 sm:px-7">
+        <p className="text-sm font-bold text-primary">שלב 2 · ייפוי כוח</p>
+        <h1 className="display mb-2 mt-2 text-4xl font-bold">כתבי הרשאה</h1>
         <p className="mb-6 text-ink-2">חתמו על ייפוי כוח מול כל בנק. העלאת המסמכים תיפתח לאחר חתימה על כל הכתבים.</p>
 
         <div className="mb-6 flex items-center gap-3">
-          <div className="h-2 flex-1 bg-rule"><div className="h-2 bg-forest" style={{ width: `${list.length ? (signed / list.length) * 100 : 0}%` }} /></div>
+          <div className="h-2 flex-1 overflow-hidden rounded-full bg-rule"><div className="h-2 rounded-full bg-refi" style={{ width: `${list.length ? (signed / list.length) * 100 : 0}%` }} /></div>
           <span className="num lbl">{signed}/{list.length}</span>
         </div>
 
-        <ul className="divide-y divide-rule border-y border-rule">
+        <ul className="card divide-y divide-rule overflow-hidden rounded-2xl">
           {list.map((a) => (
-            <li key={a.id} className="flex items-center justify-between py-3">
+            <li key={a.id} className="flex items-center justify-between p-4">
               <span className="font-bold">{a.bank}</span>
               {a.signed ? (
-                <span className="text-sm font-bold text-forest">✓ נחתם</span>
+                <span className="pill bg-[#e7f6ef] text-sm font-bold text-refi">✓ נחתם</span>
               ) : (
                 <form action={signAuthorization.bind(null, a.id)}>
-                  <button className="border border-ink px-3 py-1.5 text-sm font-bold hover:bg-ink hover:text-paper">חתום</button>
+                  <button className="btn-ghost press px-4 py-1.5 text-sm">חתום</button>
                 </form>
               )}
             </li>
@@ -50,12 +51,13 @@ export default async function AuthorizationsPage() {
 
         <div className="mt-8">
           {allSigned ? (
-            <Link href="/documents" className="inline-block bg-ember px-5 py-2.5 font-bold text-paper">המשך להעלאת מסמכים ←</Link>
+            <Link href="/documents" className="btn-primary press inline-flex px-6 py-3">המשך להעלאת מסמכים ←</Link>
           ) : (
             <p className="text-sm text-ink-3">יש לחתום על כל כתבי ההרשאה כדי להמשיך.</p>
           )}
         </div>
       </main>
+      <AppFooter />
     </>
   );
 }

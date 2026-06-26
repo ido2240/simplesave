@@ -3,9 +3,28 @@
 import { redirect } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { requireRole } from "@/lib/session";
-import { computeLoanAmountNew, type LoanType, type PropertySource } from "@/lib/engine";
+import {
+  computeLoanAmountNew,
+  validateNewMortgage,
+  type LoanType,
+  type PropertySource,
+  type BorrowerInput,
+  type ValidationIssue,
+} from "@/lib/engine";
 
-export async function saveNewMortgage(formData: FormData) {
+export interface SaveState {
+  issues: ValidationIssue[];
+}
+
+const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || 0.38);
+const MAX_AGE = Number(process.env.MAX_AGE_NEW_MORTGAGE || 85);
+
+/** Persist the questionnaire after server-side validation. Returns issues on
+ *  failure; redirects to the clocks on success. Used with useActionState. */
+export async function saveNewMortgage(
+  _prev: SaveState | undefined,
+  formData: FormData,
+): Promise<SaveState> {
   const user = await requireRole("client");
   const db = supabase();
 
@@ -16,14 +35,31 @@ export async function saveNewMortgage(formData: FormData) {
   const termYears = Number(formData.get("termYears") || 30);
   const minPay = Number(formData.get("minPay") || 0);
   const maxPay = Number(formData.get("maxPay") || 0);
-  const birthDate = String(formData.get("birthDate") || "");
-  const netIncome = Number(formData.get("netIncome") || 0);
+  const additionalIncome = Number(formData.get("additionalIncome") || 0);
+  const fixedExpenses = Number(formData.get("fixedExpenses") || 0);
 
-  const loan = computeLoanAmountNew({
-    loanType, propertySource, propertyValue, equity,
-    borrowers: [], additionalIncome: 0, fixedExpenses: 0,
+  // Borrower rows arrive as parallel arrays (DOM order preserved).
+  const names = formData.getAll("bFullName").map(String);
+  const births = formData.getAll("bBirthDate").map(String);
+  const incomes = formData.getAll("bNetIncome").map((v) => Number(v || 0));
+  const owners = formData.getAll("bIsOwner").map((v) => String(v) === "1");
+  const borrowers: BorrowerInput[] = names.map((fullName, i) => ({
+    fullName: fullName.trim(),
+    birthDate: births[i] ? births[i] : null,
+    netIncome: incomes[i] ?? 0,
+    isPropertyOwner: owners[i] ?? true,
+  }));
+
+  const input = {
+    loanType, propertySource, propertyValue, equity, borrowers,
+    additionalIncome, fixedExpenses,
     desiredMinPayment: minPay, desiredMaxPayment: maxPay, existingMortgageBalance: 0,
-  });
+  };
+
+  const validation = validateNewMortgage(input, { paymentRatio: RATIO, maxAge: MAX_AGE });
+  if (!validation.ok) return { issues: validation.issues };
+
+  const loan = computeLoanAmountNew(input);
 
   const { data: existing } = await db
     .from("requests").select("id").eq("client_id", user.id)
@@ -55,10 +91,16 @@ export async function saveNewMortgage(formData: FormData) {
     loan_type: loanType, property_source: propertySource, term_years: termYears, min_pay: minPay, max_pay: maxPay,
   };
   await db.from("request_details").upsert(details, { onConflict: "request_id" });
+
+  // Household additional income / fixed expenses are stored on the first borrower.
+  const rows = borrowers.map((b, i) => ({
+    request_id: requestId, full_name: b.fullName, birth_date: b.birthDate ?? "",
+    net_income: b.netIncome, is_property_owner: b.isPropertyOwner,
+    additional_income: i === 0 ? additionalIncome : 0,
+    fixed_expenses: i === 0 ? fixedExpenses : 0,
+  }));
   await db.from("borrowers").delete().eq("request_id", requestId);
-  await db.from("borrowers").insert({
-    request_id: requestId, full_name: user.name, birth_date: birthDate, net_income: netIncome, is_property_owner: true,
-  });
+  await db.from("borrowers").insert(rows);
 
   redirect("/new-mortgage/clocks");
 }

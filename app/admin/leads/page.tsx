@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 import { requireRole } from "@/lib/session";
 import { supabase } from "@/lib/supabase";
 import { shekel } from "@/lib/format";
@@ -21,27 +22,27 @@ export default async function LeadsPage() {
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-[1140px] flex-1 px-5 py-10">
-        <Link href="/admin" className="lbl hover:text-ember">→ חזרה לניהול</Link>
-        <h1 className="display mt-2 mb-6 text-4xl font-black">לידים ושיוך</h1>
-        <div className="overflow-x-auto">
+      <main className="mx-auto w-full max-w-[1140px] flex-1 px-5 py-8 sm:px-7">
+        <Link href="/admin" className="lbl hover:text-manager">→ חזרה לניהול</Link>
+        <h1 className="display mb-6 mt-2 text-4xl font-bold">לידים ושיוך</h1>
+        <div className="card overflow-x-auto rounded-2xl p-2">
           <table className="w-full min-w-[520px] text-sm">
-            <thead><tr className="lbl border-b-2 border-ink text-right">
-              <th className="py-2">לקוח</th><th>סטטוס</th><th>הלוואה</th><th>יועץ</th>
+            <thead><tr className="lbl border-b border-rule text-right">
+              <th className="px-4 py-3">לקוח</th><th>סטטוס</th><th>הלוואה</th><th>יועץ</th>
             </tr></thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r.id} className="border-b border-rule">
-                  <td className="py-3 font-bold">{r.client?.full_name ?? "—"}</td>
-                  <td>{r.status}</td>
+                <tr key={r.id} className="border-b border-rule last:border-0">
+                  <td className="px-4 py-3.5 font-bold">{r.client?.full_name ?? "—"}</td>
+                  <td><span className="pill bg-paper-2 text-ink-2">{r.status}</span></td>
                   <td className="num">{r.request_details ? shekel(r.request_details.loan_amount) : "—"}</td>
                   <td>
                     <form action={assignAdvisor.bind(null, r.id)} className="flex items-center gap-2">
-                      <select name="advisorId" defaultValue={r.advisor_id ?? ""} className="border border-rule bg-paper-2 px-2 py-1 outline-none focus:border-ink">
+                      <select name="advisorId" defaultValue={r.advisor_id ?? ""} className="rounded-lg border border-rule-strong bg-paper px-2.5 py-1.5 outline-none focus:border-manager">
                         <option value="">— ללא —</option>
                         {(advisors ?? []).map((a) => (<option key={a.id} value={a.id}>{a.full_name}</option>))}
                       </select>
-                      <button className="border border-ink px-3 py-1 text-xs font-bold hover:bg-ink hover:text-paper">שייך</button>
+                      <button className="press rounded-lg bg-manager px-4 py-1.5 text-xs font-bold text-white hover:opacity-90">שייך</button>
                     </form>
                   </td>
                 </tr>
@@ -50,6 +51,7 @@ export default async function LeadsPage() {
           </table>
         </div>
       </main>
+      <AppFooter />
     </>
   );
 }

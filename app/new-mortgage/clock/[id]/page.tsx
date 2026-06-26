@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 import RiskGauge from "@/components/RiskGauge";
 import AmortizationChart, { type YearPoint } from "@/components/AmortizationChart";
 import { requireRole } from "@/lib/session";
@@ -50,33 +51,39 @@ export default async function ClockDetail({
   return (
     <>
       <AppHeader />
-      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-8">
-        <Link href="/new-mortgage/clocks" className="lbl hover:text-ember">→ חזרה לתמהילים</Link>
-        <div className="mt-3 flex items-start justify-between gap-3">
-          <h1 className="display text-4xl font-black">{clock.nameHe}</h1>
-          <RiskGauge risk={clock.risk} size={120} />
+      <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-8 sm:px-7">
+        <Link href="/new-mortgage/clocks" className="lbl hover:text-primary">→ חזרה לתמהילים</Link>
+
+        <div className="card mt-3 flex items-center justify-between gap-3 rounded-2xl p-6">
+          <div>
+            <p className="text-sm font-bold text-primary">פירוט תמהיל</p>
+            <h1 className="display mt-1 text-3xl font-bold sm:text-4xl">{clock.nameHe}</h1>
+          </div>
+          <RiskGauge risk={clock.risk} size={140} />
         </div>
 
-        <div className="mt-5 grid grid-cols-2 gap-4 border-y border-rule py-4 sm:grid-cols-4">
+        <div className="card mt-4 grid grid-cols-2 gap-4 rounded-2xl p-6 sm:grid-cols-4">
           <Stat label="החזר ראשון" value={shekel(m.firstPay)} />
           <Stat label="עלות כוללת" value={shekel(m.total)} />
           <Stat label="סך ריבית" value={shekel(m.interest)} />
           <Stat label="סך הצמדה" value={shekel(m.indexation)} />
         </div>
 
-        <h2 className="display mt-8 mb-2 text-xl font-bold">קרן מול ריבית לאורך זמן</h2>
-        <AmortizationChart data={data} />
+        <div className="card mt-4 rounded-2xl p-6">
+          <h2 className="display mb-3 text-xl font-bold">קרן מול ריבית לאורך זמן</h2>
+          <AmortizationChart data={data} />
+        </div>
 
-        <h2 className="display mt-8 mb-3 text-xl font-bold">מסלולים</h2>
-        <div className="overflow-x-auto">
+        <div className="card mt-4 overflow-x-auto rounded-2xl p-6">
+          <h2 className="display mb-3 text-xl font-bold">מסלולים</h2>
           <table className="w-full min-w-[420px] text-sm">
-            <thead><tr className="lbl border-b-2 border-ink text-right">
+            <thead><tr className="lbl border-b border-rule text-right">
               <th className="py-2">מסלול</th><th>חלק</th><th>שנים</th><th>ריבית</th><th>סכום</th>
             </tr></thead>
             <tbody>
               {clock.routes.map((rt, i) => (
-                <tr key={i} className="border-b border-rule">
-                  <td className="py-2">{TRACK_LABEL[rt.kind ?? "fixed"]}{rt.indexType === "מדד" ? " צמודה" : ""}</td>
+                <tr key={i} className="border-b border-rule last:border-0">
+                  <td className="py-2.5">{TRACK_LABEL[rt.kind ?? "fixed"]}{rt.indexType === "מדד" ? " צמודה" : ""}</td>
                   <td className="num">{rt.sharePct}%</td>
                   <td className="num">{rt.years}</td>
                   <td className="num">{pct(rt.anchor + rt.margin)}</td>
@@ -87,20 +94,21 @@ export default async function ClockDetail({
           </table>
         </div>
 
-        <div className="mt-8">
+        <div className="mt-6">
           {choose ? (
             <form action={chooseClock.bind(null, clock.key)}>
-              <button className="w-full bg-ember py-3 font-bold text-paper hover:opacity-90">שמור תמהיל זה והמשך לאזור האישי ←</button>
+              <button className="btn-primary press w-full py-3.5 text-base">שמור תמהיל זה והמשך לאזור האישי ←</button>
             </form>
           ) : (
-            <Link href={`/new-mortgage/clock/${clock.key}?choose=1`} className="block bg-ink py-3 text-center font-bold text-paper hover:bg-ink-2">בחר תמהיל זה</Link>
+            <Link href={`/new-mortgage/clock/${clock.key}?choose=1`} className="btn-primary press block py-3.5 text-center text-base">בחר תמהיל זה</Link>
           )}
         </div>
       </main>
+      <AppFooter />
     </>
   );
 }
 
 function Stat({ label, value }: { label: string; value: string }) {
-  return <div><p className="lbl">{label}</p><p className="num text-lg font-bold">{value}</p></div>;
+  return <div><p className="lbl">{label}</p><p className="display num text-lg font-bold">{value}</p></div>;
 }

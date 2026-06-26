@@ -1,5 +1,6 @@
 import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
+import AppFooter from "@/components/AppFooter";
 
 const STEPS = [
   { n: "1", t: "שאלון קצר", d: "פרטי הנכס, ההון העצמי, ההכנסה וההחזר החודשי הרצוי." },
@@ -17,19 +18,20 @@ export default function AboutPage() {
           SimpleSave מחליף את שיחת הייעוץ הראשונית: במקום לנחש, מקבלים חמש הצעות תמהיל
           מבוססות-נתונים תוך דקה — מנוע מאומת מול הסימולטור המקורי.
         </p>
-        <ol className="space-y-5">
+        <ol className="space-y-4">
           {STEPS.map((s) => (
-            <li key={s.n} className="flex gap-4 border-b border-rule pb-5">
-              <span className="display text-3xl font-black text-ember">{s.n}</span>
+            <li key={s.n} className="card flex gap-4 rounded-2xl p-5">
+              <span className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary-2 to-primary-deep text-lg font-bold text-white">{s.n}</span>
               <div>
-                <p className="display text-lg font-bold">{s.t}</p>
-                <p className="text-ink-2">{s.d}</p>
+                <p className="text-lg font-bold">{s.t}</p>
+                <p className="mt-0.5 text-ink-2">{s.d}</p>
               </div>
             </li>
           ))}
         </ol>
-        <Link href="/new-mortgage" className="mt-8 inline-block bg-ink px-6 py-3 font-bold text-paper hover:bg-ink-2">התחילו ←</Link>
+        <Link href="/new-mortgage" className="btn-primary press mt-8 inline-flex px-6 py-3">התחילו ←</Link>
       </main>
+      <AppFooter />
     </>
   );
 }

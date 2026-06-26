@@ -1,12 +1,8 @@
-// Mock cookie session (demo auth) — the spec-allowed dev role switcher.
-// A signed-in user is just a profile id stored in an httpOnly cookie. Production
-// would replace this with Supabase Auth (GoTrue) + @supabase/ssr.
+// Real auth session, backed by Supabase Auth (GoTrue). The signed-in user is the
+// JWT-validated auth user; the app role lives on the linked profiles row.
 import "server-only";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { supabase } from "./supabase";
-
-export const SESSION_COOKIE = "ss_uid";
+import { supabaseServer } from "./supabase-server";
 
 export type Role = "client" | "advisor" | "admin";
 
@@ -18,13 +14,13 @@ export interface AppUser {
 }
 
 export async function currentUser(): Promise<AppUser | null> {
-  const jar = await cookies();
-  const uid = jar.get(SESSION_COOKIE)?.value;
-  if (!uid) return null;
-  const { data } = await supabase()
+  const sb = await supabaseServer();
+  const { data: { user } } = await sb.auth.getUser();
+  if (!user) return null;
+  const { data } = await sb
     .from("profiles")
     .select("id, email, full_name, role")
-    .eq("id", uid)
+    .eq("id", user.id)
     .maybeSingle();
   if (!data) return null;
   return { id: data.id, email: data.email, name: data.full_name, role: data.role as Role };
@@ -40,19 +36,4 @@ export async function requireRole(role: Role): Promise<AppUser> {
   const user = await requireUser();
   if (user.role !== role) redirect("/");
   return user;
-}
-
-export async function setSession(userId: string): Promise<void> {
-  const jar = await cookies();
-  jar.set(SESSION_COOKIE, userId, {
-    httpOnly: true,
-    sameSite: "lax",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 30,
-  });
-}
-
-export async function clearSession(): Promise<void> {
-  const jar = await cookies();
-  jar.delete(SESSION_COOKIE);
 }

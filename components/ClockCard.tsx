@@ -15,39 +15,58 @@ export default function ClockCard({
   const principalPct = m.total > 0 ? m.principal / m.total : 0;
 
   return (
-    <article className="flex flex-col border border-rule bg-paper-2/40 p-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="lbl">תמהיל {rank}</span>
-            {recommended && <span className="bg-ember px-1.5 py-0.5 text-[10px] font-bold text-paper">מומלץ</span>}
-            {clock.duplicateFlag && (
-              <span className="border border-rule-strong px-1.5 py-0.5 text-[10px] text-ink-3">
-                כפיל של {CLOCK_LABEL[clock.duplicateFlag] ?? clock.duplicateFlag}
-              </span>
-            )}
-          </div>
-          <h3 className="display mt-1 text-2xl font-bold">{clock.nameHe}</h3>
+    <article
+      className={`card lift relative flex flex-col rounded-2xl p-5 ${recommended ? "border-2 border-primary" : ""}`}
+    >
+      {recommended && (
+        <span className="anim-pulse absolute -top-3 right-1/2 translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-l from-primary-2 to-primary-deep px-3.5 py-1 text-[11.5px] font-extrabold text-white">
+          ★ הכי משתלם
+        </span>
+      )}
+
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="lbl">תמהיל {rank}</span>
+        {clock.duplicateFlag && (
+          <span className="rounded-md border border-rule-strong px-1.5 py-0.5 text-[10px] text-ink-3">
+            כפיל של {CLOCK_LABEL[clock.duplicateFlag] ?? clock.duplicateFlag}
+          </span>
+        )}
+      </div>
+      <h3 className="display mt-1 text-2xl font-bold">{clock.nameHe}</h3>
+
+      <div className="mt-3 flex justify-center">
+        <RiskGauge risk={clock.risk} size={150} />
+      </div>
+
+      {/* stat block */}
+      <div className="mt-3 flex flex-col gap-2.5 rounded-2xl bg-paper p-3.5">
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-ink-3">החזר ראשון</span>
+          <span className="display num text-xl font-bold">{shekel(m.firstPay)}</span>
         </div>
-        <RiskGauge risk={clock.risk} size={104} />
-      </div>
-
-      <div className="mt-4 grid grid-cols-3 gap-3 border-t border-rule pt-4">
-        <div><p className="lbl">החזר ראשון</p><p className="num text-lg font-bold">{shekel(m.firstPay)}</p></div>
-        <div><p className="lbl">עלות כוללת</p><p className="num text-lg font-bold">{shekel(m.total)}</p></div>
-        <div><p className="lbl">ריבית+הצמדה</p><p className="num text-lg font-bold">{shekel(m.interest + m.indexation)}</p></div>
-      </div>
-
-      <div className="mt-4">
-        <div className="flex h-2 overflow-hidden bg-rule">
-          <div className="bg-ink" style={{ width: `${principalPct * 100}%` }} />
+        <div className="h-px bg-rule" />
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-ink-3">סה״כ תשלומים</span>
+          <span className="num text-sm font-bold text-ink-2">{shekel(m.total)}</span>
         </div>
-        <p className="lbl mt-1">קרן {pct(principalPct, 0)} · ריבית/הצמדה {pct(1 - principalPct, 0)}</p>
+        <div className="flex items-baseline justify-between">
+          <span className="text-xs text-ink-3">מזה ריבית והצמדה</span>
+          <span className="num text-sm font-bold text-ink-2">{shekel(m.interest + m.indexation)}</span>
+        </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-1.5">
+      {/* principal / interest split */}
+      <div className="mt-3">
+        <div className="flex h-2 overflow-hidden rounded-md bg-rule">
+          <div className="rounded-md bg-primary" style={{ width: `${principalPct * 100}%` }} />
+        </div>
+        <p className="lbl mt-1.5">קרן {pct(principalPct, 0)} · ריבית/הצמדה {pct(1 - principalPct, 0)}</p>
+      </div>
+
+      {/* route chips */}
+      <div className="mt-3 flex flex-wrap gap-1.5">
         {clock.routes.map((rt, i) => (
-          <span key={i} className="border border-rule px-2 py-0.5 text-xs">
+          <span key={i} className="rounded-md border border-rule bg-paper px-2 py-0.5 text-xs text-ink-2">
             {TRACK_LABEL[rt.kind ?? "fixed"]} {rt.sharePct}%{rt.indexType === "מדד" ? " צמודה" : ""}
           </span>
         ))}
@@ -55,8 +74,12 @@ export default function ClockCard({
 
       {showActions && (
         <div className="mt-5 flex gap-2">
-          <Link href={`${base}/clock/${clock.key}`} className="flex-1 border border-rule py-2 text-center text-sm hover:bg-paper-2">פירוט</Link>
-          <Link href={`${base}/clock/${clock.key}?choose=1`} className="flex-1 bg-ink py-2 text-center text-sm font-bold text-paper hover:bg-ink-2">בחר</Link>
+          <Link href={`${base}/clock/${clock.key}?choose=1`} className="btn-primary press flex-1 py-2.5 text-center text-sm">
+            בחר תמהיל
+          </Link>
+          <Link href={`${base}/clock/${clock.key}`} className="btn-ghost press px-3.5 py-2.5 text-center text-sm">
+            פירוט ‹
+          </Link>
         </div>
       )}
     </article>

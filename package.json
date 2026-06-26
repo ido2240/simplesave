@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "seed": "tsx supabase/seed.ts",
+    "seed": "tsx --env-file=.env.local supabase/seed.ts",
     "parity:golden": "tsx scripts/dump_golden.ts"
   },
   "dependencies": {

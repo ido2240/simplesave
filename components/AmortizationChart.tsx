@@ -29,10 +29,10 @@ export default function AmortizationChart({ data }: { data: YearPoint[] }) {
         <Tooltip
           formatter={((v: number, name: string) => [fmt(Number(v)), name === "principal" ? "קרן" : "ריבית/הצמדה"]) as never}
           labelFormatter={(y) => `שנה ${y}`}
-          contentStyle={{ background: "var(--paper-2)", border: "1px solid var(--rule)", fontSize: 12 }}
+          contentStyle={{ background: "var(--surface)", border: "1px solid var(--rule)", borderRadius: 12, fontSize: 12, boxShadow: "0 14px 34px -20px rgba(20,40,90,0.4)" }}
         />
-        <Area type="monotone" dataKey="interest" stackId="1" stroke="var(--ember)" fill="var(--ember)" fillOpacity={0.25} />
-        <Area type="monotone" dataKey="principal" stackId="1" stroke="var(--ink)" fill="var(--ink)" fillOpacity={0.5} />
+        <Area type="monotone" dataKey="interest" stackId="1" stroke="var(--risk-mid)" fill="var(--risk-mid)" fillOpacity={0.22} />
+        <Area type="monotone" dataKey="principal" stackId="1" stroke="var(--primary)" fill="var(--primary)" fillOpacity={0.35} />
       </AreaChart>
     </ResponsiveContainer>
   );

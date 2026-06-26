@@ -1,32 +1,68 @@
 @import "tailwindcss";
 
-/* ── Design tokens — editorial Hebrew broadsheet (warm newsprint + ink) ── */
+/* ── Design tokens — modern Israeli fintech (cool paper + navy ink + blue) ── */
 :root {
-  --paper: #efe8d7;
-  --paper-2: #f4eee0;
-  --ink: #1b1610;
-  --ink-2: #4a4032;
-  --ink-3: #8a7c66;
-  --rule: #ccc0a6;
-  --rule-strong: #b5a684;
-  --ember: #cf4d17; /* the one accent — used sparingly */
-  --forest: #2c6049; /* risk: low */
-  --ochre: #a67a24; /* risk: medium */
-  --brick: #a4371e; /* risk: high */
+  /* surfaces */
+  --paper: #f6f8fc;        /* page background (cool) */
+  --surface: #ffffff;      /* cards */
+  --paper-2: #eef1f8;      /* subtle inner fill / hover */
+  --tint: #eaf0ff;         /* primary tint */
+
+  /* ink */
+  --ink: #0c1838;          /* headlines / primary text */
+  --ink-2: #41506e;        /* body */
+  --ink-3: #7c89a6;        /* muted / labels */
+
+  /* rules */
+  --rule: #e7ecf6;
+  --rule-strong: #d4ddef;
+
+  /* brand + service accents */
+  --primary: #2549c9;      /* the one blue */
+  --primary-2: #2f57e0;
+  --primary-deep: #1f379c;
+  --refi: #15976a;         /* refinance / success — green */
+  --insurance: #d9820b;    /* insurance — orange */
+  --manager: #7a4fe0;      /* manager — purple */
+
+  /* risk scale (green → amber → red) */
+  --risk-low: #1f9d6b;
+  --risk-mid: #e0a100;
+  --risk-high: #e04848;
+
+  /* legacy aliases (kept so untouched markup stays coherent) */
+  --ember: var(--primary);
+  --forest: var(--risk-low);
+  --ochre: var(--risk-mid);
+  --brick: var(--risk-high);
 }
 
 @theme inline {
   --color-paper: var(--paper);
+  --color-surface: var(--surface);
   --color-paper-2: var(--paper-2);
+  --color-tint: var(--tint);
   --color-ink: var(--ink);
   --color-ink-2: var(--ink-2);
   --color-ink-3: var(--ink-3);
   --color-rule: var(--rule);
   --color-rule-strong: var(--rule-strong);
-  --color-ember: var(--ember);
-  --color-forest: var(--forest);
-  --color-ochre: var(--ochre);
-  --color-brick: var(--brick);
+  --color-primary: var(--primary);
+  --color-primary-2: var(--primary-2);
+  --color-primary-deep: var(--primary-deep);
+  --color-refi: var(--refi);
+  --color-insurance: var(--insurance);
+  --color-manager: var(--manager);
+  --color-risk-low: var(--risk-low);
+  --color-risk-mid: var(--risk-mid);
+  --color-risk-high: var(--risk-high);
+
+  /* legacy aliases */
+  --color-ember: var(--primary);
+  --color-forest: var(--risk-low);
+  --color-ochre: var(--risk-mid);
+  --color-brick: var(--risk-high);
+
   --font-display: var(--font-display);
   --font-body: var(--font-body);
 }
@@ -35,6 +71,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-body), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 h1, h2, h3, .display {
@@ -56,8 +93,83 @@ h1, h2, h3, .display {
   font-variant-numeric: tabular-nums;
 }
 
-/* Masthead rule at the very top of the page */
+/* ── Reusable surface + control primitives ───────────────────────────────── */
+
+/* White card on the cool page background */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  box-shadow: 0 14px 34px -26px rgba(20, 40, 90, 0.4);
+}
+
+/* Gradient primary action */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(150deg, var(--primary-2), var(--primary-deep));
+  border-radius: 12px;
+  box-shadow: 0 12px 24px -8px rgba(37, 73, 201, 0.4);
+  transition: transform 0.12s ease, box-shadow 0.2s ease;
+}
+.btn-primary:hover { box-shadow: 0 16px 30px -8px rgba(37, 73, 201, 0.55); }
+.btn-primary:active { transform: scale(0.97); }
+
+/* Secondary outline action */
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-weight: 600;
+  color: var(--primary);
+  background: var(--surface);
+  border: 1.4px solid var(--rule-strong);
+  border-radius: 12px;
+  transition: background 0.18s ease, transform 0.12s ease;
+}
+.btn-ghost:hover { background: var(--paper-2); }
+.btn-ghost:active { transform: scale(0.97); }
+
+/* Soft pill chip */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 6px 13px;
+}
+
+/* Card lift on hover */
+.lift { transition: transform 0.22s cubic-bezier(.2,.8,.3,1), box-shadow 0.22s ease; }
+.lift:hover { transform: translateY(-4px); box-shadow: 0 30px 54px -28px rgba(37, 73, 201, 0.4); }
+
+/* Press feedback */
+.press { transition: transform 0.12s ease, box-shadow 0.2s ease, background 0.2s ease; }
+.press:active { transform: scale(0.96); }
+
+/* Entrance animations (from the Claude Design source) */
+@keyframes ssFade { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes ssRise { from { opacity: 0; transform: translateY(26px) scale(.97); } to { opacity: 1; transform: none; } }
+@keyframes ssFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
+@keyframes ssPulse { 0%, 100% { box-shadow: 0 6px 14px rgba(37,73,201,.34); } 50% { box-shadow: 0 6px 22px rgba(37,73,201,.6); } }
+.anim-fade { animation: ssFade .4s ease both; }
+.anim-rise { animation: ssRise .5s cubic-bezier(.2,.8,.3,1) both; }
+.anim-float { animation: ssFloat 5.5s ease-in-out infinite; }
+.anim-pulse { animation: ssPulse 2.2s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; }
+}
+
+/* Masthead rule retained as a thin brand bar */
 .masthead-rule {
-  height: 5px;
-  background: var(--ink);
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary-2), var(--primary-deep));
 }

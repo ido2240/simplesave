@@ -18,7 +18,36 @@ export async function loadMarketParams(): Promise<MarketParams> {
     .select("cpi, usd, eur")
     .eq("id", "singleton")
     .maybeSingle();
-  return { cpi: data?.cpi ?? 0.02, usd: data?.usd ?? 0.03, eur: data?.eur ?? 0.015 };
+  return { cpi: data?.cpi ?? 0.03, usd: data?.usd ?? 0.03, eur: data?.eur ?? 0.015 };
+}
+
+export interface RateAnchors {
+  prime: number;
+  fixed: number;
+  variable: number;
+}
+
+/** Live, manager-editable base rate per route kind. */
+export async function loadRateAnchors(): Promise<RateAnchors> {
+  const { data } = await supabase()
+    .from("economic_params")
+    .select("prime_rate, fixed_anchor, variable_anchor")
+    .eq("id", "singleton")
+    .maybeSingle();
+  return {
+    prime: data?.prime_rate ?? 0.0456,
+    fixed: data?.fixed_anchor ?? 0.0462,
+    variable: data?.variable_anchor ?? 0.047,
+  };
+}
+
+/** Apply the live anchors onto template routes by kind, so editing a rate in
+ *  the admin moves the computed clocks. */
+function applyAnchors(routes: RouteSpec[], rates: RateAnchors): RouteSpec[] {
+  return routes.map((r) => ({
+    ...r,
+    anchor: r.kind === "prime" ? rates.prime : r.kind === "fixed" ? rates.fixed : rates.variable,
+  }));
 }
 
 export async function loadClockTemplates(): Promise<ClockTemplateRow[]> {
@@ -35,9 +64,9 @@ export async function computeClocks(
   minPay: number,
   maxPay: number,
 ): Promise<(ClockResult & { recommended: boolean })[]> {
-  const [params, rows] = await Promise.all([loadMarketParams(), loadClockTemplates()]);
+  const [params, rates, rows] = await Promise.all([loadMarketParams(), loadRateAnchors(), loadClockTemplates()]);
   const templates: Record<string, RouteSpec[]> = {};
-  for (const r of rows) templates[r.id] = r.routes;
+  for (const r of rows) templates[r.id] = applyAnchors(r.routes, rates);
 
   return rows.map((row) => {
     const clock = generateClock(row.id, {
@@ -60,10 +89,10 @@ export async function computeOneClock(
   minPay: number,
   maxPay: number,
 ): Promise<ClockResult | null> {
-  const [params, rows] = await Promise.all([loadMarketParams(), loadClockTemplates()]);
+  const [params, rates, rows] = await Promise.all([loadMarketParams(), loadRateAnchors(), loadClockTemplates()]);
   const row = rows.find((r) => r.id === id);
   if (!row) return null;
   const templates: Record<string, RouteSpec[]> = {};
-  for (const r of rows) templates[r.id] = r.routes;
+  for (const r of rows) templates[r.id] = applyAnchors(r.routes, rates);
   return generateClock(id, { loan, minPay, maxPay, params, templates, nameHe: row.name, duplicateFlag: row.duplicate_of });
 }

@@ -18,7 +18,9 @@ const DUPLICATE_OF: Record<string, string | null> = {
 
 async function main() {
   // economic params
-  await db.from("economic_params").upsert({ id: "singleton", cpi: 0.02, usd: 0.03, eur: 0.015, prime_rate: 0.0456 });
+  // Defaults verbatim from the reference simulator: index expectations
+  // {'מדד':0.03,'דולר':0.03,'אירו':0.015} and prime anchor .0456.
+  await db.from("economic_params").upsert({ id: "singleton", cpi: 0.03, usd: 0.03, eur: 0.015, prime_rate: 0.0456, fixed_anchor: 0.0462, variable_anchor: 0.047 });
 
   // clock templates (reference verbatim; duplicates flagged)
   for (let i = 0; i < CLOCK_KEYS.length; i++) {

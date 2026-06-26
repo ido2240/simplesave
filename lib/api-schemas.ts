@@ -4,7 +4,7 @@ import { z } from "zod";
 import { blankRoute, type Route } from "./engine";
 
 export const paramsSchema = z.object({
-  cpi: z.number().default(0.02),
+  cpi: z.number().default(0.03),
   usd: z.number().default(0.03),
   eur: z.number().default(0.015),
 });
@@ -33,7 +33,7 @@ export function toRoute(input: z.infer<typeof routeInputSchema>): Route {
 
 export const calculateSchema = z.object({
   routes: z.array(routeInputSchema).min(1).max(10),
-  params: paramsSchema.default({ cpi: 0.02, usd: 0.03, eur: 0.015 }),
+  params: paramsSchema.default({ cpi: 0.03, usd: 0.03, eur: 0.015 }),
 });
 
 const borrowerSchema = z.object({
@@ -54,12 +54,12 @@ export const newMortgageSchema = z.object({
   desiredMinPayment: z.number().nonnegative(),
   desiredMaxPayment: z.number().nonnegative(),
   existingMortgageBalance: z.number().nonnegative().default(0),
-  params: paramsSchema.default({ cpi: 0.02, usd: 0.03, eur: 0.015 }),
+  params: paramsSchema.default({ cpi: 0.03, usd: 0.03, eur: 0.015 }),
 });
 
 export const refinanceSchema = z.object({
   existingRoutesBalance: z.number().positive(),
   desiredMinPayment: z.number().positive(),
   desiredMaxPayment: z.number().positive(),
-  params: paramsSchema.default({ cpi: 0.02, usd: 0.03, eur: 0.015 }),
+  params: paramsSchema.default({ cpi: 0.03, usd: 0.03, eur: 0.015 }),
 });

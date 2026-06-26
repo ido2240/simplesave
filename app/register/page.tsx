@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { loginByEmail } from "./actions";
+import { registerUser } from "./actions";
 
 const inputCls = "w-full rounded-xl border border-rule-strong bg-paper px-4 py-3 outline-none focus:border-primary";
 
-export default function LoginPage() {
-  const [error, formAction, pending] = useActionState(loginByEmail, undefined);
+export default function RegisterPage() {
+  const [error, formAction, pending] = useActionState(registerUser, undefined);
 
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
@@ -23,27 +23,35 @@ export default function LoginPage() {
             <div className="text-[11px] font-medium text-ink-3">פשוט לחסוך</div>
           </div>
         </div>
-        <h1 className="display mb-1 mt-6 text-3xl font-bold">כניסה</h1>
-        <p className="mb-6 text-sm text-ink-2">התחברו כדי לראות את הבקשות והאזור האישי שלכם.</p>
+        <h1 className="display mb-1 mt-6 text-3xl font-bold">הרשמה</h1>
+        <p className="mb-6 text-sm text-ink-2">פתחו חשבון כדי לקבל חמישה תמהילים ולנהל את התהליך.</p>
 
         <form action={formAction} className="space-y-4">
           <label className="block">
-            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">אימייל</span>
-            <input name="email" type="email" required dir="ltr" placeholder="you@simplesave.co.il" className={`${inputCls} text-left`} />
+            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">שם מלא</span>
+            <input name="fullName" type="text" required className={inputCls} />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">סיסמה</span>
-            <input name="password" type="password" required dir="ltr" placeholder="••••••••" className={`${inputCls} text-left`} />
+            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">אימייל</span>
+            <input name="email" type="email" required dir="ltr" placeholder="you@example.com" className={`${inputCls} text-left`} />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">סיסמה (לפחות 8 תווים)</span>
+            <input name="password" type="password" required dir="ltr" minLength={8} className={`${inputCls} text-left`} />
+          </label>
+          <label className="block">
+            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">אימות סיסמה</span>
+            <input name="confirm" type="password" required dir="ltr" className={`${inputCls} text-left`} />
           </label>
           {error && <p className="text-sm text-risk-high">{error}</p>}
           <button type="submit" disabled={pending} className="btn-primary press w-full py-3 disabled:opacity-50">
-            {pending ? "מתחבר…" : "כניסה"}
+            {pending ? "נרשם…" : "צור חשבון"}
           </button>
         </form>
 
         <p className="mt-6 text-center text-sm text-ink-2">
-          אין לכם חשבון?{" "}
-          <Link href="/register" className="font-semibold text-primary hover:underline">הרשמה</Link>
+          כבר יש לכם חשבון?{" "}
+          <Link href="/login" className="font-semibold text-primary hover:underline">כניסה</Link>
         </p>
       </div>
     </main>

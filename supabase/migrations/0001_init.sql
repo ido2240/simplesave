@@ -107,7 +107,7 @@ create table public.leads (
 -- Manager-editable engine config
 create table public.economic_params (
   id         text primary key default 'singleton',
-  cpi        double precision not null default 0.02,
+  cpi        double precision not null default 0.03,
   usd        double precision not null default 0.03,
   eur        double precision not null default 0.015,
   prime_rate double precision not null default 0.0456

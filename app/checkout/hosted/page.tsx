@@ -14,22 +14,22 @@ export default async function HostedCheckout({ searchParams }: { searchParams: P
   if (!req || req.client_id !== user.id) notFound();
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-ink p-6">
-      <div className="w-full max-w-sm bg-paper p-7">
+    <main className="flex min-h-screen items-center justify-center p-6" style={{ background: "linear-gradient(135deg,#0c1838,#22409b)" }}>
+      <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
         <p className="lbl mb-1">תשלום מאובטח (הדגמה)</p>
         <h1 className="display mb-4 text-2xl font-bold">SimpleSave מלא</h1>
         <div className="mb-5 flex justify-between border-y border-rule py-3">
-          <span>לתשלום</span><span className="num font-black">{shekel(SERVICE_PRICE_ILS)}</span>
+          <span>לתשלום</span><span className="num display font-bold">{shekel(SERVICE_PRICE_ILS)}</span>
         </div>
         <div className="mb-5 space-y-2 text-sm text-ink-3">
-          <div className="border border-rule bg-paper-2 px-3 py-2">•••• •••• •••• 4242</div>
+          <div className="rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5">•••• •••• •••• 4242</div>
           <div className="flex gap-2">
-            <div className="flex-1 border border-rule bg-paper-2 px-3 py-2">12 / 34</div>
-            <div className="w-20 border border-rule bg-paper-2 px-3 py-2">123</div>
+            <div className="flex-1 rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5">12 / 34</div>
+            <div className="w-20 rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5">123</div>
           </div>
         </div>
         <form action={confirmPayment.bind(null, rid)}>
-          <button className="w-full bg-ember py-3 font-bold text-paper hover:opacity-90">שלם {shekel(SERVICE_PRICE_ILS)}</button>
+          <button className="btn-primary press w-full py-3.5">שלם {shekel(SERVICE_PRICE_ILS)}</button>
         </form>
       </div>
     </main>
