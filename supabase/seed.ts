@@ -66,6 +66,13 @@ async function ensureUser(u: typeof DEMO_USERS[number]) {
   if (error && !/already|exists|registered/i.test(error.message)) throw error;
 }
 
+function must<T extends { error: { message: string } | null }>(label: string) {
+  return (res: T): T => {
+    if (res.error) throw new Error(`seed: ${label} failed — ${res.error.message}`);
+    return res;
+  };
+}
+
 async function main() {
   // Demo auth users (idempotent) → profiles via trigger.
   for (const u of DEMO_USERS) await ensureUser(u);
@@ -75,7 +82,7 @@ async function main() {
   await db.from("economic_params").upsert({
     id: "singleton", cpi: 0.03, usd: 0.03, eur: 0.015,
     prime_rate: 0.0456, fixed_anchor: 0.0462, variable_anchor: 0.047,
-  });
+  }).then(must("economic_params"));
 
   // clock templates — the mockup's five mixes (D-2 rev.; no duplicates)
   for (let i = 0; i < CLOCK_TEMPLATES.length; i++) {
@@ -89,7 +96,7 @@ async function main() {
       recommended: t.recommended,
       subtitle: t.subtitle,
       display_risk: t.displayRisk,
-    });
+    }).then(must(`clock_template ${t.id}`));
   }
 
   const { data: profiles } = await db.from("profiles").select("id, email");
@@ -98,30 +105,31 @@ async function main() {
   const dan = byEmail["dan@simplesave.co.il"];
 
   // one demo request for Yossi, advised by Dan (reset to a single clean copy)
-  await db.from("requests").delete().eq("client_id", yossi);
+  await db.from("requests").delete().eq("client_id", yossi).then(must("requests delete"));
   const { data: req } = await db
     .from("requests")
     .insert({ client_id: yossi, advisor_id: dan, service: "new_mortgage", status: "clocks" })
     .select("id")
-    .single();
+    .single()
+    .then(must("request insert"));
   const rid = req!.id;
   await db.from("request_details").insert({
     request_id: rid, property_value: 2_000_000, equity: 500_000, loan_amount: 1_500_000,
     loan_type: "single_property", property_source: "second_hand", term_years: 25, min_pay: 7000, max_pay: 10_000,
-  });
+  }).then(must("request_details"));
   // 30,000 ₪ net keeps the demo scenario valid under the 38% DTI rule
   // (capacity 11,400 ₪ ≥ the request's 10,000 ₪ max pay).
-  await db.from("borrowers").insert({ request_id: rid, full_name: "יוסי לקוח", birth_date: "1985-05-05", net_income: 30_000, is_property_owner: true });
+  await db.from("borrowers").insert({ request_id: rid, full_name: "יוסי לקוח", birth_date: "1985-05-05", net_income: 30_000, is_property_owner: true }).then(must("borrowers"));
   await db.from("authorizations").insert([
     { request_id: rid, bank: "בנק הפועלים" },
     { request_id: rid, bank: "בנק לאומי" },
     { request_id: rid, bank: "מזרחי טפחות" },
-  ]);
+  ]).then(must("authorizations"));
   await db.from("documents").insert([
     { request_id: rid, kind: "תעודת זהות" },
     { request_id: rid, kind: "תלושי שכר (3 אחרונים)" },
     { request_id: rid, kind: "דפי חשבון בנק" },
-  ]);
+  ]).then(must("documents"));
 
   console.log("✓ Seed complete: 4 auth users, params + anchors, 5 clocks, 1 demo request");
 }

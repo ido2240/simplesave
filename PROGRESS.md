@@ -336,3 +336,44 @@ sandbox pay in one click → sign 3 authorizations → upload document; manager
 dashboard shows the unassigned lead and assigns dan; dan sees the client card
 and the pending document. `npm test` 2/2 (parity intact) · `npm run build`
 green. Test users and storage removed; demo DB restored.
+
+---
+
+## Step 8 — Phase 1: business-logic reconciliation + isolated test env (2026-07-06)
+
+### Reconciliation (spec ⇄ definitive mockup ⇄ engine)
+Unpacked `reference/simplesave-mockup.html` (bundler manifest/template + the
+46KB embedded logic component) and extracted the spec docx full text. Findings
+and decisions in `presentation/phase1_reconciliation.md`; owner approved each:
+- **DTI → 40%** (D-3 revised): spec self-contradicts (38 lead-table / 40
+  main-flow); mockup uses 40. Engine default + env + hints updated; parity green.
+- **D-5 resolved: refinance age 80** (spec full text confirms; no code change).
+- **Mix templates → the mockup's five** (D-2 rev.): סולידי/מאוזן/מומלץ★/גמיש/
+  אגרסיבי, fixed/variable/prime 70/20/10→20/30/50, duplicate quirk gone.
+  Payments stay on the validated engine; migration `0008_clock_display_meta`
+  adds `subtitle` + `display_risk` (0-100); new display-risk layer
+  (`lib/display-risk.ts`) labels per mockup thresholds — **resolves D-6 (b)**.
+- LTV caps / age 85 / non-owner 50% income: verified matching everywhere.
+
+### Test environment (no more prod testing)
+Installed Colima + Supabase CLI; local stack (`supabase start`) with analytics
+off (Colima socket issue). Found local CLI grants no data privileges to
+anon/authenticated/service_role → migration `0009_table_grants.sql` (explicit
+grants to authenticated + service_role only). `supabase db reset` + hardened
+`npm run seed` (now fails loudly — was silently swallowing errors).
+`.env.local` now points at the local stack; production credentials removed
+from the working copy. Full 27-check E2E passes against local; the five new
+templates render with mockup names/subtitles/risk labels.
+
+### Security flags (owner action required)
+Prod service-role + anon keys sit in plaintext in `~/ido_new_project/.env.local`
+(and previously this repo's `.env.local`) — rotate in the Supabase dashboard
+(`kvavcpwccxooflduockp`) and update Vercel. Same for the legacy
+`yykciskiajsjurrmulcy` keys in `~/ido_ai/.env.local` if that project still
+exists. Git history verified clean (no secrets ever committed). The prod
+Supabase project also contains an unrelated freelancer-marketplace schema
+(created 2026-06-29, empty of user data) — owner recognizes it; left untouched.
+
+### Phase 2 gate
+`GAP.md` grades every mockup screen (✅/🟡/❌) with three scope tiers —
+**awaiting owner scope selection before building anything**.
