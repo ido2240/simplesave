@@ -1,10 +1,11 @@
 import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
-import ClockCard from "@/components/ClockCard";
+import ClocksGrid from "@/components/ClocksGrid";
 import { requireRole } from "@/lib/session";
 import { getActiveRequest } from "@/lib/requests";
 import { computeClocks } from "@/lib/engine-config";
+import { toClockCardData } from "@/lib/clock-card-data";
 import { shekel } from "@/lib/format";
 
 export default async function ClocksPage() {
@@ -43,11 +44,7 @@ export default async function ClocksPage() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {clocks.map((c, i) => (
-            <ClockCard key={c.key} clock={c} rank={i + 1} recommended={c.recommended} />
-          ))}
-        </div>
+        <ClocksGrid clocks={clocks.map(toClockCardData)} />
 
         <p className="mt-10 text-center text-xs text-ink-3">
           חישוב במנוע מאומת מול הסימולטור המקורי. אינו מהווה ייעוץ משכנתאי.

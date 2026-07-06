@@ -1,6 +1,7 @@
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import ClockCard from "@/components/ClockCard";
+import { toClockCardData } from "@/lib/clock-card-data";
 import { computeClocks, loadMarketParams } from "@/lib/engine-config";
 import { blankRoute, calcMix, mixRisk } from "@/lib/engine";
 import { shekel } from "@/lib/format";
@@ -145,7 +146,7 @@ export default async function RefinancePage({
 
             <h2 className="display mb-3 mt-9 text-2xl font-bold">פירוט התמהילים החלופיים</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {clocks.map((c, i) => (<ClockCard key={c.key} clock={c} rank={i + 1} recommended={c.recommended} showActions={false} />))}
+              {clocks.map((c, i) => (<ClockCard key={c.key} clock={toClockCardData(c)} rank={i + 1} recommended={c.recommended} showActions={false} />))}
             </div>
           </>
         )}

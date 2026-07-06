@@ -2,6 +2,14 @@
 
 import { useActionState, useState } from "react";
 import { saveNewMortgage } from "@/app/new-mortgage/actions";
+import {
+  TARGET_PRICE_MIN_EQUITY,
+  computeLoanAmountNew,
+  financingLimitPct,
+  minEquityPct,
+  type LoanType,
+  type PropertySource,
+} from "@/lib/engine/rules";
 
 const field = "num w-full rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5 outline-none focus:border-primary";
 
@@ -42,6 +50,24 @@ export default function NewMortgageForm({
   const [additionalIncome, setAdditionalIncome] = useState(defaults.additionalIncome);
   const [fixedExpenses, setFixedExpenses] = useState(defaults.fixedExpenses);
   const [maxPay, setMaxPay] = useState(defaults.maxPay);
+  const [propertyValue, setPropertyValue] = useState(defaults.propertyValue);
+  const [equity, setEquity] = useState(defaults.equity);
+  const [loanType, setLoanType] = useState(defaults.loanType as LoanType);
+  const [propertySource, setPropertySource] = useState(defaults.propertySource as PropertySource);
+
+  // Live LTV/equity hints — same pure engine functions the server validates with.
+  const ltv = financingLimitPct(loanType, propertySource);
+  const minEqPct = minEquityPct(loanType, propertySource);
+  const requiredEquity = Math.max(
+    propertyValue * minEqPct,
+    propertySource === "target_price" ? TARGET_PRICE_MIN_EQUITY : 0,
+  );
+  const equityOk = equity >= requiredEquity - 0.01;
+  const estLoan = computeLoanAmountNew({
+    loanType, propertySource, propertyValue, equity,
+    borrowers: [], additionalIncome: 0, fixedExpenses: 0,
+    desiredMinPayment: 0, desiredMaxPayment: 0, existingMortgageBalance: 0,
+  });
 
   // Mirrors the server rule (lib/engine/rules): non-owner income counts at 50%.
   const countingIncome = rows.reduce((s, r) => s + (r.isOwner ? r.netIncome : r.netIncome * 0.5), 0);
@@ -68,21 +94,29 @@ export default function NewMortgageForm({
 
       <section className="card grid grid-cols-1 gap-5 rounded-2xl p-6 sm:grid-cols-2">
         <label className="block"><span className="lbl mb-1 block">שווי הנכס (₪)</span>
-          <input name="propertyValue" type="number" defaultValue={defaults.propertyValue} className={field} /></label>
+          <input name="propertyValue" type="number" value={propertyValue} onChange={(e) => setPropertyValue(Number(e.target.value) || 0)} className={field} /></label>
         <label className="block"><span className="lbl mb-1 block">הון עצמי (₪)</span>
-          <input name="equity" type="number" defaultValue={defaults.equity} className={field} /></label>
+          <input name="equity" type="number" value={equity} onChange={(e) => setEquity(Number(e.target.value) || 0)} className={field} /></label>
+        <div className="sm:col-span-2 rounded-xl bg-[#eff3ff] px-4 py-3 text-sm font-semibold text-[#2a47a8]">
+          אחוז מימון מרבי: <b className="num">{Math.round(ltv * 100)}%</b> · מימון מקסימלי <b className="num">{shekelFmt(propertyValue * ltv)}</b> · סכום משכנתא משוער: <b className="num">{shekelFmt(estLoan)}</b>
+        </div>
+        <div className={`sm:col-span-2 rounded-xl px-4 py-3 text-sm font-semibold ${equityOk ? "bg-[#e9f7f0] text-[#0e7a50]" : "bg-[#fceeec] text-risk-high"}`}>
+          {equityOk
+            ? <>מצוין — הון עצמי תקין. סכום משכנתא: <b className="num">{shekelFmt(estLoan)}</b></>
+            : <>נדרש הון עצמי של לפחות <b className="num">{shekelFmt(requiredEquity)}</b> ({Math.round(minEqPct * 100)}% משווי הנכס{propertySource === "target_price" ? ", מינ׳ 100,000 ₪" : ""})</>}
+        </div>
         <label className="block"><span className="lbl mb-1 block">סוג הלוואה</span>
-          <select name="loanType" defaultValue={defaults.loanType} className={field}>
-            <option value="single_property">נכס יחיד</option>
-            <option value="additional_property">נכס נוסף</option>
-            <option value="all_purpose">לכל מטרה</option>
-            <option value="improvement">שיפור דיור</option>
+          <select name="loanType" value={loanType} onChange={(e) => setLoanType(e.target.value as LoanType)} className={field}>
+            <option value="single_property">נכס יחיד · עד 75% מימון</option>
+            <option value="additional_property">נכס נוסף · עד 50% מימון</option>
+            <option value="all_purpose">לכל מטרה · עד 50% מימון</option>
+            <option value="improvement">שיפור דיור · עד 70% מימון</option>
           </select></label>
         <label className="block"><span className="lbl mb-1 block">מקור הנכס</span>
-          <select name="propertySource" defaultValue={defaults.propertySource} className={field}>
-            <option value="second_hand">יד 2</option>
-            <option value="contractor">קבלן</option>
-            <option value="target_price">מחיר למשתכן</option>
+          <select name="propertySource" value={propertySource} onChange={(e) => setPropertySource(e.target.value as PropertySource)} className={field}>
+            <option value="second_hand">יד 2 · עד 75%</option>
+            <option value="contractor">קבלן · עד 75%</option>
+            <option value="target_price">מחיר למשתכן · עד 90%, מינ׳ 100,000 ₪ הון עצמי</option>
             <option value="self_build">בנייה עצמית</option>
           </select></label>
         <label className="block"><span className="lbl mb-1 block">תקופה (שנים)</span>

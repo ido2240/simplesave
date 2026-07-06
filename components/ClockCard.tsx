@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ClockWithMeta } from "@/lib/engine-config";
+import type { ClockCardData } from "@/lib/clock-card-data";
 import { displayRiskLabel } from "@/lib/display-risk";
 import { shekel, pct } from "@/lib/format";
 import RiskGauge from "./RiskGauge";
@@ -8,16 +10,16 @@ const TRACK_LABEL: Record<string, string> = { fixed: "קבועה", variable: "מ
 const CLOCK_LABEL: Record<string, string> = { clock1: "שעון 1", clock2: "שעון 2", clock3: "שעון 3", clock4: "שעון 4", clock5: "שעון 5" };
 
 export default function ClockCard({
-  clock, rank, recommended, base = "/new-mortgage", showActions = true,
+  clock, rank, recommended, base = "/new-mortgage", showActions = true, selected = false, onChoose,
 }: {
-  clock: ClockWithMeta; rank: number; recommended?: boolean; base?: string; showActions?: boolean;
+  clock: ClockCardData; rank: number; recommended?: boolean; base?: string; showActions?: boolean;
+  selected?: boolean; onChoose?: (key: string) => void;
 }) {
-  const m = clock.mix;
-  const principalPct = m.total > 0 ? m.principal / m.total : 0;
+  const principalPct = clock.principalPct;
 
   return (
     <article
-      className={`card lift relative flex flex-col rounded-2xl p-5 ${recommended ? "border-2 border-primary" : ""}`}
+      className={`card lift relative flex flex-col rounded-2xl p-5 ${selected ? "outline outline-[3px] outline-[#dce5fb] border-2 border-primary" : recommended ? "border-2 border-primary" : ""}`}
     >
       {recommended && (
         <span className="anim-pulse absolute -top-3 right-1/2 translate-x-1/2 whitespace-nowrap rounded-full bg-gradient-to-l from-primary-2 to-primary-deep px-3.5 py-1 text-[11.5px] font-extrabold text-white">
@@ -44,16 +46,16 @@ export default function ClockCard({
       <div className="mt-3 flex flex-col gap-2.5 rounded-2xl bg-paper p-3.5">
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-ink-3">החזר ראשון</span>
-          <span className="display num text-xl font-bold">{shekel(m.firstPay)}</span>
+          <span className="display num text-xl font-bold">{shekel(clock.firstPay)}</span>
         </div>
         <div className="h-px bg-rule" />
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-ink-3">סה״כ תשלומים</span>
-          <span className="num text-sm font-bold text-ink-2">{shekel(m.total)}</span>
+          <span className="num text-sm font-bold text-ink-2">{shekel(clock.total)}</span>
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-xs text-ink-3">מזה ריבית והצמדה</span>
-          <span className="num text-sm font-bold text-ink-2">{shekel(m.interest + m.indexation)}</span>
+          <span className="num text-sm font-bold text-ink-2">{shekel(clock.costSide)}</span>
         </div>
       </div>
 
@@ -69,16 +71,26 @@ export default function ClockCard({
       <div className="mt-3 flex flex-wrap gap-1.5">
         {clock.routes.map((rt, i) => (
           <span key={i} className="rounded-md border border-rule bg-paper px-2 py-0.5 text-xs text-ink-2">
-            {TRACK_LABEL[rt.kind ?? "fixed"]} {rt.sharePct}%{rt.indexType === "מדד" ? " צמודה" : ""}
+            {TRACK_LABEL[rt.kind]} {rt.sharePct}%{rt.indexed ? " צמודה" : ""}
           </span>
         ))}
       </div>
 
       {showActions && (
         <div className="mt-5 flex gap-2">
-          <Link href={`${base}/clock/${clock.key}?choose=1`} className="btn-primary press flex-1 py-2.5 text-center text-sm">
-            בחר תמהיל
-          </Link>
+          {onChoose ? (
+            <button
+              type="button"
+              onClick={() => onChoose(clock.key)}
+              className={`press flex-1 rounded-xl py-2.5 text-center text-sm font-bold ${selected ? "border border-[#b7e3ce] bg-[#e7f6ef] text-[#0e7a50]" : "btn-primary"}`}
+            >
+              {selected ? "✓ נבחר" : "בחר תמהיל"}
+            </button>
+          ) : (
+            <Link href={`${base}/clock/${clock.key}?choose=1`} className="btn-primary press flex-1 py-2.5 text-center text-sm">
+              בחר תמהיל
+            </Link>
+          )}
           <Link href={`${base}/clock/${clock.key}`} className="btn-ghost press px-3.5 py-2.5 text-center text-sm">
             פירוט ‹
           </Link>
