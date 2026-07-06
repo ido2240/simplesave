@@ -16,11 +16,22 @@ const body = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: "SimpleSave — משכנתא חכמה",
-  description: "פלטפורמה להשוואת תמהילי משכנתא וקבלת החלטות מימון טובות יותר",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://ido-new-project.vercel.app"),
+  title: { default: "SimpleSave — משכנתא חכמה, פשוט לחסוך", template: "%s · SimpleSave" },
+  description:
+    "חמישה תמהילי משכנתא מותאמים אישית בחינם: השוואת מסלולים, מחזור משכנתא וביטוח — עם ליווי יועץ עד החתימה.",
   manifest: "/manifest.json",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "SimpleSave" },
   icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  openGraph: {
+    type: "website",
+    locale: "he_IL",
+    siteName: "SimpleSave",
+    title: "SimpleSave — משכנתא חכמה, פשוט לחסוך",
+    description: "חמישה תמהילי משכנתא מותאמים אישית בחינם, השוואת מחזור וביטוח — עם ליווי יועץ עד החתימה.",
+  },
+  twitter: { card: "summary" },
+  robots: { index: true, follow: true },
 };
 
 export const viewport: Viewport = {

@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
+import { RATE_LIMIT_MESSAGE, rateLimitOk } from "@/lib/rate-limit";
 
 export async function registerUser(_prev: string | undefined, formData: FormData) {
   const fullName = String(formData.get("fullName") || "").trim();
@@ -15,6 +16,7 @@ export async function registerUser(_prev: string | undefined, formData: FormData
   if (password.length < 8) return "הסיסמה חייבת לכלול לפחות 8 תווים.";
   if (password !== confirm) return "הסיסמאות אינן תואמות.";
   if (!consent) return "יש לאשר את תנאי השימוש ומדיניות הפרטיות.";
+  if (!(await rateLimitOk({ name: "register", limit: 5, windowMs: 60_000 }))) return RATE_LIMIT_MESSAGE;
 
   const sb = await supabaseServer();
   const { error } = await sb.auth.signUp({

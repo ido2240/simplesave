@@ -26,6 +26,14 @@ definitive mockup has no competing age rule. Matches the existing
 
 ## Resolved decisions
 
+### D-7: Insurance comparison with demo tariffs — RESOLVED 2026-07-06
+The "blocked until real tariff tables" rule is superseded by an explicit owner
+decision: the definitive mockup's premium factors ship as **demo/estimated
+tariffs**, labeled as such in every surface (UI warning banner, per-column
+asterisks and footnote, `demo:true` on the API) and never presented as live
+insurer quotes. Real tariff tables can replace the factors without UI changes.
+
+
 ### D-1: Clock 2 strategy name — RESOLVED 2026-06-25
 The spec listed "Short-term" twice (a typo). Clock 2 is now **תמהיל מאוזן (Balanced)** —
 the classic thirds mix (fixed-unlinked / variable-unlinked / prime). Editable by the

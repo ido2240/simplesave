@@ -46,8 +46,9 @@ green; it is the safety net for any engine change.
   Payments always from the validated engine, never the mockup's flat annuity.
 - DTI **40%** (D-3 rev.); max age **85** new / **80** refinance (D-5 resolved);
   indexation **annual**.
-- Insurance + balance-PDF parsing **blocked** until real tariff/parse engines —
-  never fabricate numbers.
+- Insurance ships with **owner-approved demo tariffs** (D-7, 2026-07-06) —
+  always labeled as estimates, never as live quotes. Balance-PDF parsing stays
+  **blocked** until a real parse engine exists — never fabricate numbers.
 
 ## How we work
 - Build incrementally; one focused task per session.

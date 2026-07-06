@@ -1,5 +1,6 @@
 // POST /api/new-mortgage/clocks — validate a questionnaire and return 5 clocks.
 import { NextResponse } from "next/server";
+import { RATE_LIMIT_MESSAGE, rateLimitOk } from "@/lib/rate-limit";
 import { DEFAULT_PAYMENT_TO_INCOME_RATIO, generateAllClocks, validateNewMortgage } from "@/lib/engine";
 import { newMortgageSchema } from "@/lib/api-schemas";
 
@@ -7,6 +8,9 @@ const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || DEFAULT_PAYMENT_TO_I
 const MAX_AGE = Number(process.env.MAX_AGE_NEW_MORTGAGE || 85);
 
 export async function POST(req: Request) {
+  if (!(await rateLimitOk({ name: "api-clocks", limit: 30, windowMs: 60_000 }))) {
+    return NextResponse.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 });
+  }
   const parsed = newMortgageSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "invalid body", issues: parsed.error.issues }, { status: 422 });

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { supabaseServer } from "@/lib/supabase-server";
 import type { Role } from "@/lib/session";
+import { RATE_LIMIT_MESSAGE, rateLimitOk } from "@/lib/rate-limit";
 
 // Demo accounts (real Supabase Auth identities — real passwords, not a mock bypass).
 const DEMO_CREDENTIALS: Record<Role, { email: string; password: string; label: string }> = {
@@ -24,6 +25,7 @@ export async function loginByEmail(_prev: string | undefined, formData: FormData
   const email = String(formData.get("email") || "").toLowerCase().trim();
   const password = String(formData.get("password") || "");
   if (!email || !password) return "יש להזין אימייל וסיסמה.";
+  if (!(await rateLimitOk({ name: "login", limit: 10, windowMs: 60_000 }))) return RATE_LIMIT_MESSAGE;
 
   const sb = await supabaseServer();
   const { error } = await sb.auth.signInWithPassword({ email, password });

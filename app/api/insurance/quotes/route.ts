@@ -3,6 +3,7 @@
 // mockup's illustrative estimates, NOT live insurer quotes. Swap the factors
 // for real tariff tables when provided — the shape stays the same.
 import { NextResponse } from "next/server";
+import { RATE_LIMIT_MESSAGE, rateLimitOk } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const N_MONTHS = 300;
@@ -19,6 +20,9 @@ const INSURERS = [
 const bodySchema = z.object({ sum: z.number().positive().max(100_000_000) });
 
 export async function POST(req: Request) {
+  if (!(await rateLimitOk({ name: "api-ins", limit: 30, windowMs: 60_000 }))) {
+    return NextResponse.json({ error: RATE_LIMIT_MESSAGE }, { status: 429 });
+  }
   const parsed = bodySchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "יש לשלוח sum חיובי (יתרת המשכנתא לביטוח)." }, { status: 400 });
