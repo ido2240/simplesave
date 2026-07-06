@@ -460,3 +460,40 @@ Per-item findings:
 - **Only-works-locally list:** migrations 0008–0011; mockup template seed;
   DTI env value; preview env vars. Nothing else — no feature flags, no
   local-only services.
+
+---
+
+## Step 11 — Phase D: ship to main (in progress, 2026-07-06)
+
+### Done before the preview gate
+- **Pre-migration snapshot** of all 12 prod tables (31 rows) →
+  `~/simplesave-backups/prod-snapshot-pre-migration-2026-07-06.json` (rollback baseline).
+- **Prod migrations applied** via the Supabase Management API (one at a time,
+  verified after each — NOT `db push`, which would have replayed 0001's DROP
+  TABLEs): 0008 ✓, 0009 ✓, 0010 ✓, 0011 ✓. Confirmed on prod: new tables
+  (bank_offers, active_mortgages, active_tracks, advisor_tasks) with RLS on;
+  new columns (documents.required, profiles.accepted_terms_at, messages.read_at);
+  profiles_select policy recreated; authenticated+service_role grants present.
+- **Templates upserted** to the five mockup templates (data only — no user/
+  request rows touched; yossi/maya live rows preserved).
+- **Env vars:** Preview scope added (6 vars incl. DTI 0.40); Production
+  PAYMENT_TO_INCOME_RATIO updated 0.38 → 0.40 (effective on next prod deploy).
+- **PR #1** opened (Hebrew summary). **Preview deployed** (Ready), Vercel SSO-
+  protected — owner smoke-tests via their Vercel login.
+
+### Rollback plan (prepared)
+- **Vercel (code):** `vercel rollback <previous-prod-url>` — the last good prod
+  deployment is `ido-new-project-4l508yfx7` (commit c819c10). Instant, no build.
+- **DTI env:** revert PAYMENT_TO_INCOME_RATIO to 0.38 + redeploy if needed.
+- **Supabase (schema):** all four migrations are additive, so the old code runs
+  against the new schema unharmed — rolling back the code alone is sufficient
+  and is the recommended path. If a hard schema revert is ever required:
+  `drop table active_tracks, active_mortgages, bank_offers, advisor_tasks cascade;`
+  `alter table documents drop column required;`
+  `alter table profiles drop column accepted_terms_at;`
+  `alter table messages drop column read_at;`
+  `alter table clock_templates drop column subtitle, drop column display_risk;`
+  then restore clock_templates rows from the snapshot. Data restore for any
+  table: re-insert from the pre-migration JSON snapshot.
+
+### Gate → awaiting owner sign-off on the preview before merge to main.
