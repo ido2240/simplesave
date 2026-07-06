@@ -78,7 +78,9 @@ async function main() {
     request_id: rid, property_value: 2_000_000, equity: 500_000, loan_amount: 1_500_000,
     loan_type: "single_property", property_source: "second_hand", term_years: 25, min_pay: 7000, max_pay: 10_000,
   });
-  await db.from("borrowers").insert({ request_id: rid, full_name: "יוסי לקוח", birth_date: "1985-05-05", net_income: 14_000, is_property_owner: true });
+  // 30,000 ₪ net keeps the demo scenario valid under the 38% DTI rule
+  // (capacity 11,400 ₪ ≥ the request's 10,000 ₪ max pay).
+  await db.from("borrowers").insert({ request_id: rid, full_name: "יוסי לקוח", birth_date: "1985-05-05", net_income: 30_000, is_property_owner: true });
   await db.from("authorizations").insert([
     { request_id: rid, bank: "בנק הפועלים" },
     { request_id: rid, bank: "בנק לאומי" },

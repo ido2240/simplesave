@@ -30,7 +30,9 @@ export default async function NewMortgagePage() {
     }
   }
   if (!borrowers.length) {
-    borrowers = [{ fullName: user.name, birthDate: "1985-05-05", netIncome: 14000, isOwner: true }];
+    // Default scenario must satisfy its own DTI validation: 30,000 ₪ net at a
+    // 38% ratio gives an 11,400 ₪ capacity, above the default 10,000 ₪ max pay.
+    borrowers = [{ fullName: user.name, birthDate: "1985-05-05", netIncome: 30000, isOwner: true }];
   }
 
   const defaults: FormDefaults = {
@@ -45,6 +47,8 @@ export default async function NewMortgagePage() {
     fixedExpenses,
   };
 
+  const paymentRatio = Number(process.env.PAYMENT_TO_INCOME_RATIO || 0.38);
+
   return (
     <>
       <AppHeader />
@@ -54,7 +58,7 @@ export default async function NewMortgagePage() {
           <h1 className="display mt-2 text-4xl font-bold">בואו נמצא את התמהיל המושלם</h1>
           <p className="mt-2 text-ink-2">מלאו את הפרטים ונחשב עבורכם חמישה תמהילים מותאמים אישית.</p>
         </div>
-        <NewMortgageForm defaults={defaults} borrowers={borrowers} />
+        <NewMortgageForm defaults={defaults} borrowers={borrowers} paymentRatio={paymentRatio} />
       </main>
       <AppFooter />
     </>

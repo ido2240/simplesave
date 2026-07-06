@@ -24,17 +24,29 @@ export interface FormDefaults {
   fixedExpenses: number;
 }
 
-const emptyBorrower: BorrowerSeed = { fullName: "", birthDate: "1985-05-05", netIncome: 14000, isOwner: true };
+const emptyBorrower: BorrowerSeed = { fullName: "", birthDate: "1985-05-05", netIncome: 30000, isOwner: true };
+
+const shekelFmt = (n: number) => `${Math.round(n).toLocaleString("he-IL")} ₪`;
 
 export default function NewMortgageForm({
   defaults,
   borrowers,
+  paymentRatio,
 }: {
   defaults: FormDefaults;
   borrowers: BorrowerSeed[];
+  paymentRatio: number;
 }) {
   const [state, formAction, pending] = useActionState(saveNewMortgage, undefined);
   const [rows, setRows] = useState<BorrowerSeed[]>(borrowers.length ? borrowers : [{ ...emptyBorrower }]);
+  const [additionalIncome, setAdditionalIncome] = useState(defaults.additionalIncome);
+  const [fixedExpenses, setFixedExpenses] = useState(defaults.fixedExpenses);
+  const [maxPay, setMaxPay] = useState(defaults.maxPay);
+
+  // Mirrors the server rule (lib/engine/rules): non-owner income counts at 50%.
+  const countingIncome = rows.reduce((s, r) => s + (r.isOwner ? r.netIncome : r.netIncome * 0.5), 0);
+  const capacity = Math.max(0, (countingIncome + additionalIncome - fixedExpenses) * paymentRatio);
+  const overCapacity = maxPay > capacity + 0.01;
 
   const setRow = (i: number, patch: Partial<BorrowerSeed>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -109,13 +121,18 @@ export default function NewMortgageForm({
 
       <section className="card grid grid-cols-1 gap-5 rounded-2xl p-6 sm:grid-cols-2">
         <label className="block"><span className="lbl mb-1 block">הכנסות נוספות (₪)</span>
-          <input name="additionalIncome" type="number" defaultValue={defaults.additionalIncome} className={field} /></label>
+          <input name="additionalIncome" type="number" value={additionalIncome} onChange={(e) => setAdditionalIncome(Number(e.target.value) || 0)} className={field} /></label>
         <label className="block"><span className="lbl mb-1 block">הוצאות קבועות / הלוואות (₪)</span>
-          <input name="fixedExpenses" type="number" defaultValue={defaults.fixedExpenses} className={field} /></label>
+          <input name="fixedExpenses" type="number" value={fixedExpenses} onChange={(e) => setFixedExpenses(Number(e.target.value) || 0)} className={field} /></label>
         <label className="block"><span className="lbl mb-1 block">החזר חודשי רצוי — מ- (₪)</span>
           <input name="minPay" type="number" defaultValue={defaults.minPay} className={field} /></label>
         <label className="block"><span className="lbl mb-1 block">עד- (₪)</span>
-          <input name="maxPay" type="number" defaultValue={defaults.maxPay} className={field} /></label>
+          <input name="maxPay" type="number" value={maxPay} onChange={(e) => setMaxPay(Number(e.target.value) || 0)} className={field} /></label>
+        <div className={`sm:col-span-2 rounded-xl px-4 py-3 text-sm ${overCapacity ? "bg-[#fceeec] text-risk-high" : "bg-paper-2 text-ink-2"}`}>
+          כושר החזר משוער לפי ההכנסות: <b className="num">{shekelFmt(capacity)}</b> בחודש
+          ({Math.round(paymentRatio * 100)}% מההכנסה נטו).
+          {overCapacity && <> ההחזר המקסימלי שבחרתם גבוה מכושר ההחזר — הקטינו את ההחזר הרצוי או עדכנו את ההכנסות.</>}
+        </div>
       </section>
 
       <button disabled={pending} className="btn-primary press w-full py-3.5 text-base disabled:opacity-50">
