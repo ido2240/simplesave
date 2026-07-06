@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
+import { DEFAULT_AUTH_BANKS, DEFAULT_DOCUMENTS } from "@/lib/onboarding";
 
 export async function startCheckout() {
   const user = await requireRole("client");
@@ -47,17 +48,13 @@ async function ensureOnboardingRows(requestId: string) {
     db.from("documents").select("*", { count: "exact", head: true }).eq("request_id", requestId),
   ]);
   if (!auths) {
-    await db.from("authorizations").insert([
-      { request_id: requestId, bank: "בנק הפועלים" },
-      { request_id: requestId, bank: "בנק לאומי" },
-      { request_id: requestId, bank: "מזרחי טפחות" },
-    ]);
+    await db.from("authorizations").insert(
+      DEFAULT_AUTH_BANKS.map((bank) => ({ request_id: requestId, bank })),
+    );
   }
   if (!docs) {
-    await db.from("documents").insert([
-      { request_id: requestId, kind: "תעודת זהות" },
-      { request_id: requestId, kind: "תלושי שכר (3 אחרונים)" },
-      { request_id: requestId, kind: "דפי חשבון בנק" },
-    ]);
+    await db.from("documents").insert(
+      DEFAULT_DOCUMENTS.map((d) => ({ request_id: requestId, ...d })),
+    );
   }
 }

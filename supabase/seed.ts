@@ -117,21 +117,66 @@ async function main() {
     request_id: rid, property_value: 2_000_000, equity: 500_000, loan_amount: 1_500_000,
     loan_type: "single_property", property_source: "second_hand", term_years: 25, min_pay: 7000, max_pay: 10_000,
   }).then(must("request_details"));
-  // 30,000 ₪ net keeps the demo scenario valid under the 38% DTI rule
-  // (capacity 11,400 ₪ ≥ the request's 10,000 ₪ max pay).
+  // 30,000 ₪ net keeps the demo scenario valid under the 40% DTI rule
+  // (capacity 12,000 ₪ ≥ the request's 10,000 ₪ max pay).
   await db.from("borrowers").insert({ request_id: rid, full_name: "יוסי לקוח", birth_date: "1985-05-05", net_income: 30_000, is_property_owner: true }).then(must("borrowers"));
   await db.from("authorizations").insert([
     { request_id: rid, bank: "בנק הפועלים" },
     { request_id: rid, bank: "בנק לאומי" },
     { request_id: rid, bank: "מזרחי טפחות" },
   ]).then(must("authorizations"));
+  // Mockup document checklist (the 6th item — כתבי הסמכה — derives live from
+  // the authorizations table, so 5 uploadable rows; שמאי is optional).
   await db.from("documents").insert([
-    { request_id: rid, kind: "תעודת זהות" },
-    { request_id: rid, kind: "תלושי שכר (3 אחרונים)" },
-    { request_id: rid, kind: "דפי חשבון בנק" },
+    { request_id: rid, kind: "תדפיס עו״ש 3 חודשים", required: true },
+    { request_id: rid, kind: "תלושי שכר 3 חודשים", required: true },
+    { request_id: rid, kind: "צילום ת״ז + ספח", required: true },
+    { request_id: rid, kind: "חוזה רכישה", required: true },
+    { request_id: rid, kind: "הערכת שמאי", required: false },
   ]).then(must("documents"));
 
-  console.log("✓ Seed complete: 4 auth users, params + anchors, 5 clocks, 1 demo request");
+  // bank tender demo (mockup: 3 approved, best = מזרחי, 1 pending)
+  await db.from("bank_offers").delete().eq("request_id", rid).then(must("bank_offers delete"));
+  await db.from("bank_offers").insert([
+    { request_id: rid, bank: "בנק מזרחי-טפחות", note: "אישור עקרוני התקבל · התנאים הטובים ביותר", rate_pct: 4.21, approved: true, is_best: true },
+    { request_id: rid, bank: "בנק הפועלים", note: "אישור עקרוני התקבל", rate_pct: 4.38, approved: true, is_best: false },
+    { request_id: rid, bank: "בנק לאומי", note: "אישור עקרוני התקבל", rate_pct: 4.44, approved: true, is_best: false },
+    { request_id: rid, bank: "בנק דיסקונט", note: "ממתין לתשובת הבנק", rate_pct: null, approved: false, is_best: false },
+  ]).then(must("bank_offers"));
+
+  // Maya: executed mortgage → the active-management screen demo
+  const maya = byEmail["maya@simplesave.co.il"];
+  await db.from("requests").delete().eq("client_id", maya).then(must("maya requests delete"));
+  const { data: mreq } = await db
+    .from("requests")
+    .insert({ client_id: maya, advisor_id: dan, service: "new_mortgage", status: "active", service_status: "PAID", chosen_clock_id: "clock3" })
+    .select("id").single().then(must("maya request insert"));
+  const mrid = mreq!.id;
+  await db.from("request_details").insert({
+    request_id: mrid, property_value: 1_600_000, equity: 400_000, loan_amount: 1_200_000,
+    loan_type: "single_property", property_source: "second_hand", term_years: 25, min_pay: 5500, max_pay: 7000,
+  }).then(must("maya details"));
+  await db.from("borrowers").insert({ request_id: mrid, full_name: "מאיה לקוחה", birth_date: "1988-03-12", net_income: 26_000, is_property_owner: true }).then(must("maya borrower"));
+  await db.from("active_mortgages").upsert({
+    request_id: mrid, payments_made: 24, payments_total: 228, started_at: "2024-07-01",
+  }).then(must("active_mortgages"));
+  await db.from("active_tracks").delete().eq("request_id", mrid).then(must("active_tracks delete"));
+  await db.from("active_tracks").insert([
+    { request_id: mrid, label: "קבועה לא צמודה", share_pct: 45, balance: 540_200, rate_label: "4.30%", monthly: 2780, years: 25 },
+    { request_id: mrid, label: "משתנה כל 5 שנים", share_pct: 30, balance: 361_400, rate_label: "3.90%", monthly: 1910, years: 20 },
+    { request_id: mrid, label: "פריים", share_pct: 25, balance: 298_800, rate_label: "P-0.7%", monthly: 1490, years: 15 },
+  ]).then(must("active_tracks"));
+
+  // advisor tasks demo (mockup tasks tab)
+  await db.from("advisor_tasks").delete().eq("advisor_id", dan).then(must("advisor_tasks delete"));
+  await db.from("advisor_tasks").insert([
+    { advisor_id: dan, txt: "לבדוק תלושי שכר — יוסי לקוח", due: "היום", urgent: true, done: false },
+    { advisor_id: dan, txt: "להחזיר שיחה למאיה לקוחה", due: "היום", urgent: true, done: false },
+    { advisor_id: dan, txt: "להעלות אישור עקרוני — יוסי לקוח", due: "מחר", urgent: false, done: false },
+    { advisor_id: dan, txt: "לסגור תיק — מאיה לקוחה", due: "27/07", urgent: false, done: true },
+  ]).then(must("advisor_tasks"));
+
+  console.log("✓ Seed complete: 4 auth users, params + anchors, 5 clocks, 2 demo requests (yossi mid-flow, maya active), tender + tasks");
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });

@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
+import { DEFAULT_AUTH_BANKS, DEFAULT_DOCUMENTS } from "@/lib/onboarding";
 import {
   DEFAULT_PAYMENT_TO_INCOME_RATIO,
   computeLoanAmountNew,
@@ -73,16 +74,12 @@ export async function saveNewMortgage(
       .select("id").single();
     requestId = data!.id;
     // default onboarding rows for a new request
-    await db.from("authorizations").insert([
-      { request_id: requestId, bank: "בנק הפועלים" },
-      { request_id: requestId, bank: "בנק לאומי" },
-      { request_id: requestId, bank: "מזרחי טפחות" },
-    ]);
-    await db.from("documents").insert([
-      { request_id: requestId, kind: "תעודת זהות" },
-      { request_id: requestId, kind: "תלושי שכר (3 אחרונים)" },
-      { request_id: requestId, kind: "דפי חשבון בנק" },
-    ]);
+    await db.from("authorizations").insert(
+      DEFAULT_AUTH_BANKS.map((bank) => ({ request_id: requestId, bank })),
+    );
+    await db.from("documents").insert(
+      DEFAULT_DOCUMENTS.map((d) => ({ request_id: requestId, ...d })),
+    );
   } else {
     await db.from("requests").update({ status: "clocks" }).eq("id", requestId);
   }
