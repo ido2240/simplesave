@@ -7,6 +7,7 @@ import { getActiveRequest } from "@/lib/requests";
 import { computeOneClock } from "@/lib/engine-config";
 import { listSecurities } from "@/lib/securities";
 import { shekel } from "@/lib/format";
+import { displayRiskLabel } from "@/lib/display-risk";
 
 export default async function PersonalPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const user = await requireRole("client");
@@ -53,7 +54,7 @@ export default async function PersonalPage({ searchParams }: { searchParams: Pro
             <div className="mt-5 grid grid-cols-3 gap-4">
               <StatTile label="החזר ראשון" value={shekel(chosen.mix.firstPay)} accent="var(--primary)" />
               <StatTile label="עלות כוללת" value={shekel(chosen.mix.total)} />
-              <StatTile label="רמת סיכון" value={chosen.risk.label} />
+              <StatTile label="רמת סיכון" value={displayRiskLabel(chosen.displayRisk)} />
             </div>
           </div>
         ) : (

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import type { ClockResult } from "@/lib/engine";
+import type { ClockWithMeta } from "@/lib/engine-config";
+import { displayRiskLabel } from "@/lib/display-risk";
 import { shekel, pct } from "@/lib/format";
 import RiskGauge from "./RiskGauge";
 
@@ -9,7 +10,7 @@ const CLOCK_LABEL: Record<string, string> = { clock1: "שעון 1", clock2: "ש�
 export default function ClockCard({
   clock, rank, recommended, base = "/new-mortgage", showActions = true,
 }: {
-  clock: ClockResult; rank: number; recommended?: boolean; base?: string; showActions?: boolean;
+  clock: ClockWithMeta; rank: number; recommended?: boolean; base?: string; showActions?: boolean;
 }) {
   const m = clock.mix;
   const principalPct = m.total > 0 ? m.principal / m.total : 0;
@@ -33,9 +34,10 @@ export default function ClockCard({
         )}
       </div>
       <h3 className="display mt-1 text-2xl font-bold">{clock.nameHe}</h3>
+      {clock.subtitle && <p className="mt-0.5 text-[12.5px] text-ink-3">{clock.subtitle}</p>}
 
       <div className="mt-3 flex justify-center">
-        <RiskGauge risk={clock.risk} size={150} />
+        <RiskGauge score100={clock.displayRisk} label={displayRiskLabel(clock.displayRisk)} size={150} />
       </div>
 
       {/* stat block */}

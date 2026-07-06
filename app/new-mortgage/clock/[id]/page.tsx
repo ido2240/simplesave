@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import RiskGauge from "@/components/RiskGauge";
+import { displayRiskLabel } from "@/lib/display-risk";
 import AmortizationChart, { type YearPoint } from "@/components/AmortizationChart";
 import PendingButton from "@/components/PendingButton";
 import { requireRole } from "@/lib/session";
@@ -60,7 +61,7 @@ export default async function ClockDetail({
             <p className="text-sm font-bold text-primary">פירוט תמהיל</p>
             <h1 className="display mt-1 text-3xl font-bold sm:text-4xl">{clock.nameHe}</h1>
           </div>
-          <RiskGauge risk={clock.risk} size={140} />
+          <RiskGauge score100={clock.displayRisk} label={displayRiskLabel(clock.displayRisk)} size={140} />
         </div>
 
         <div className="card mt-4 grid grid-cols-2 gap-4 rounded-2xl p-6 sm:grid-cols-4">

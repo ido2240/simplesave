@@ -4,6 +4,7 @@ import ClockCard from "@/components/ClockCard";
 import { computeClocks, loadMarketParams } from "@/lib/engine-config";
 import { blankRoute, calcMix, mixRisk } from "@/lib/engine";
 import { shekel } from "@/lib/format";
+import { displayRiskLabel } from "@/lib/display-risk";
 
 const field = "num w-full rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5 outline-none focus:border-refi";
 
@@ -130,7 +131,7 @@ export default async function RefinancePage({
                         <td className="px-3 py-2">{shekel(c.mix.total)}</td>
                         <td className="px-3 py-2">{shekel(c.mix.interest)}</td>
                         <td className="px-3 py-2">{shekel(c.mix.indexation)}</td>
-                        <td className="px-3 py-2">{RISK_LABEL[c.risk.level] ?? c.risk.level}</td>
+                        <td className="px-3 py-2">{displayRiskLabel(c.displayRisk)}</td>
                         <td className={`px-3 py-2 font-bold ${saving > 0 ? "text-refi" : "text-risk-high"}`}>
                           {saving > 0 ? shekel(saving) : `(${shekel(-saving)})`}
                         </td>

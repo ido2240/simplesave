@@ -1,12 +1,7 @@
 // Three-color needle gauge (green → amber → red), per the Claude Design source.
-import type { RiskResult } from "@/lib/engine/types";
-
-const COLOR: Record<string, string> = {
-  נמוכה: "var(--risk-low)",
-  בינונית: "var(--risk-mid)",
-  גבוהה: "var(--risk-high)",
-  "גבוהה מאוד": "var(--risk-high)",
-};
+// Shows a 0-100 display-risk score (D-6): callers pass the template's
+// display_risk (or the engine fallback via engineRiskTo100) plus its label.
+import { displayRiskColor } from "@/lib/display-risk";
 
 // Polar point in the design's coordinate space (y flipped for screen).
 function pol(cx: number, cy: number, r: number, deg: number): [number, number] {
@@ -21,20 +16,20 @@ function arc(cx: number, cy: number, r: number, from: number, to: number) {
 }
 
 export default function RiskGauge({
-  risk,
+  score100,
+  label,
   size = 120,
   showLabel = true,
 }: {
-  risk: RiskResult;
+  score100: number;
+  label: string;
   size?: number;
   showLabel?: boolean;
 }) {
   const cx = 80, cy = 84, r = 60, sw = 13;
-  const color = COLOR[risk.label] ?? "var(--ink-3)";
-
-  // Map our 1..5 score onto the design's 0..100 sweep.
-  const score100 = Math.max(0, Math.min(100, ((risk.score - 1) / 4) * 100));
-  const ang = 180 - score100 * 1.8;
+  const clamped = Math.max(0, Math.min(100, score100));
+  const color = displayRiskColor(clamped);
+  const ang = 180 - clamped * 1.8;
   const deg = 90 - ang; // needle base points straight up; rotate to target
 
   return (
@@ -51,7 +46,7 @@ export default function RiskGauge({
       </svg>
       {showLabel && (
         <div className="-mt-1 text-center text-[13px] font-bold" style={{ color }}>
-          סיכון {risk.label}
+          סיכון {label}
         </div>
       )}
     </div>
