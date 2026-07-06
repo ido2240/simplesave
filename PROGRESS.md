@@ -412,3 +412,51 @@ journey incl. edge cases (invalid DTI, equity shortfall, already-paid guards,
 empty tender, role-based access client/advisor/manager) and every new screen.
 `npm test` 2/2 (engine parity intact — `lib/engine/` untouched all phases) ·
 `npm run build` green (30 routes).
+
+---
+
+## Step 10 — Phase C: production Supabase readiness audit (2026-07-06, read-only)
+
+Target: `kvavcpwccxooflduockp` (prod). Question: does a brand-new signup work
+with zero manual setup? **Answer: with the CURRENT deployed code — yes** (auth
+triggers 0004 provision+confirm the profile; 0007 RLS verified end-to-end for
+a first-time client; storage bucket + per-request policies work — uploads were
+exercised on prod earlier). **With the NEW code — only after migrations
+0008–0011 are applied and templates re-seeded**, because the new code writes
+`documents.required`, `profiles.accepted_terms_at`, `messages.read_at` and
+reads `clock_templates.subtitle/display_risk`, `bank_offers`,
+`active_mortgages`, `advisor_tasks`.
+
+Per-item findings:
+- **Migrations pending on prod:** 0008 (clock display meta), 0009 (explicit
+  grants — additive/idempotent; prod grants currently work, this future-proofs
+  against secure-by-default), 0010 (tender/active/tasks/consent/read-tracking
+  + RLS), 0011 (client→assigned-advisor profile visibility; fixes a live RLS
+  gap that would 500 the client chat). All additive/backwards-compatible with
+  the currently-deployed code, so they can be applied before the deploy.
+- **Seed/config data:** economic_params fully seeded (CPI/FX/prime/anchors) ✓;
+  clock_templates = legacy שעון 1–5 → must be re-seeded to the five mockup
+  templates (names/subtitles/display-risk/compositions) after 0008;
+  rate_bands is empty but has **zero code references** (legacy — harmless).
+- **New-signup table walk:** profiles (trigger, RLS self+staff+assigned-advisor
+  after 0011), requests/request_details/borrowers/documents/authorizations
+  (client-owned inserts verified), messages (thread-scoped), leads (unused by
+  app code), securities (advisor-entered), bank_offers/active_* (0010,
+  can_access_request), advisor_tasks (advisor-private). FKs/NOT NULLs all
+  satisfied by the app's insert paths (verified by the 77-check E2E on an
+  identical local schema).
+- **Storage:** `documents` bucket exists on prod with request-scoped policies
+  (0006/0007) — verified by real uploads.
+- **Backups:** none — the project is on the FREE plan, which has no automated
+  backups; that is why the dashboard shows "No backups". Options: upgrade to
+  Pro ($25/mo → daily backups, 7-day retention; PITR add-on available), or a
+  scheduled `supabase db dump` job. Interim mitigation for the launch: a full
+  JSON data snapshot of all tables via the service role immediately before
+  applying migrations (scripted, part of the rollback plan).
+- **Env vars (Vercel):** all six exist for **Production only** — a preview
+  deployment gets none (must add Preview-scoped vars before the preview gate).
+  `PAYMENT_TO_INCOME_RATIO` is `0.38` in prod env → must become `0.40` (D-3
+  rev.). Optional: `NEXT_PUBLIC_SITE_URL` for canonical SEO metadata.
+- **Only-works-locally list:** migrations 0008–0011; mockup template seed;
+  DTI env value; preview env vars. Nothing else — no feature flags, no
+  local-only services.
