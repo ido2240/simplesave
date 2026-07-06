@@ -6,15 +6,11 @@ Tracks open and resolved decisions. When a decision is resolved, fill in the cho
 
 ## Open decisions
 
-### D-6: Strategy risk labels vs. the validated risk engine — RESOLVED 2026-07-06
-**Chosen: option (b)** — a **display risk score (0–100) stored per clock
-template** (`clock_templates.display_risk`, manager-editable), labelled with
-the definitive mockup's thresholds (`<35 נמוך · <50 נמוך-בינוני · <65 בינוני ·
-<78 בינוני-גבוה · אחרת גבוה`). The ported risk engine stays untouched and its
-score remains available internally; the speedometer shows the display score.
-Owner-approved 2026-07-06 together with the mockup template adoption (D-2).
+*(none — every decision is resolved as of 2026-07-06)*
 
 ---
+
+## Resolved decisions
 
 ### D-5: Maximum borrower age — refinance flow — RESOLVED 2026-07-06
 **Chosen: 80.** Full-text extraction of the spec (`עיצוב מערכת 6.26.docx`,
@@ -22,9 +18,13 @@ refinance section: "מגביל את תקופת המשכנתא עד לגיל 80")
 definitive mockup has no competing age rule. Matches the existing
 `MAX_AGE_REFINANCE=80` default — no code change needed.
 
----
-
-## Resolved decisions
+### D-6: Strategy risk labels vs. the validated risk engine — RESOLVED 2026-07-06
+**Chosen: option (b)** — a **display risk score (0–100) stored per clock
+template** (`clock_templates.display_risk`, manager-editable), labelled with
+the definitive mockup's thresholds (`<35 נמוך · <50 נמוך-בינוני · <65 בינוני ·
+<78 בינוני-גבוה · אחרת גבוה`). The ported risk engine stays untouched and its
+score remains available internally; the speedometer shows the display score.
+Owner-approved 2026-07-06 together with the mockup template adoption (D-2).
 
 ### D-7: Insurance comparison with demo tariffs — RESOLVED 2026-07-06
 The "blocked until real tariff tables" rule is superseded by an explicit owner
