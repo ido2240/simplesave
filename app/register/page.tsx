@@ -43,6 +43,13 @@ export default function RegisterPage() {
             <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">אימות סיסמה</span>
             <input name="confirm" type="password" required dir="ltr" className={`${inputCls} text-left`} />
           </label>
+          <label className="flex items-start gap-2.5 text-[13px] text-ink-2">
+            <input type="checkbox" name="consent" required className="mt-0.5 accent-[var(--primary)]" />
+            <span>
+              קראתי ואני מסכים/ה ל<Link href="/terms" className="font-semibold text-primary hover:underline">תנאי השימוש</Link>{" "}
+              ול<Link href="/privacy" className="font-semibold text-primary hover:underline">מדיניות הפרטיות</Link>.
+            </span>
+          </label>
           {error && <p className="text-sm text-risk-high">{error}</p>}
           <button type="submit" disabled={pending} className="btn-primary press w-full py-3 disabled:opacity-50">
             {pending ? "נרשם…" : "צור חשבון"}

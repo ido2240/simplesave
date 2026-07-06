@@ -8,6 +8,9 @@ import { computeOneClock } from "@/lib/engine-config";
 import { listSecurities } from "@/lib/securities";
 import { shekel } from "@/lib/format";
 import { displayRiskLabel } from "@/lib/display-risk";
+import StatusStepper from "@/components/StatusStepper";
+import { requestStage } from "@/lib/stage";
+import { supabaseServer } from "@/lib/supabase-server";
 
 export default async function PersonalPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const user = await requireRole("client");
@@ -21,6 +24,18 @@ export default async function PersonalPage({ searchParams }: { searchParams: Pro
     chosen = await computeOneClock(req.chosen_clock_id, d.loan_amount, d.min_pay, d.max_pay);
   }
   const securities = req?.id ? await listSecurities(req.id) : [];
+  const stage = await requestStage(req);
+  let hasActive = false;
+  let unread = 0;
+  if (req?.id) {
+    const db = await supabaseServer();
+    const [{ data: am }, { count }] = await Promise.all([
+      db.from("active_mortgages").select("request_id").eq("request_id", req.id).maybeSingle(),
+      db.from("messages").select("*", { count: "exact", head: true }).eq("request_id", req.id).neq("author_id", user.id).is("read_at", null),
+    ]);
+    hasActive = !!am;
+    unread = count ?? 0;
+  }
 
   return (
     <>
@@ -37,6 +52,13 @@ export default async function PersonalPage({ searchParams }: { searchParams: Pro
             <p className="mt-0.5 text-sm text-[#2f7d57]">השלב הבא: חתימה על כתבי ההרשאה מול הבנקים.</p>
           </div>
         )}
+        {d && (
+          <div className="card mb-6 rounded-2xl p-5 sm:p-6">
+            <h2 className="lbl mb-4">סטטוס התהליך</h2>
+            <StatusStepper steps={stage.steps} />
+          </div>
+        )}
+
         {!d ? (
           <div className="card rounded-2xl p-8 text-center">
             <p className="mb-5 text-ink-2">עוד לא מילאת שאלון משכנתא.</p>
@@ -107,6 +129,9 @@ export default async function PersonalPage({ searchParams }: { searchParams: Pro
           <NextStep href="/new-mortgage/clocks" title="התמהילים" desc="חמשת השעונים שלך" />
           <NextStep href="/authorizations" title="כתבי הרשאה" desc="חתימה מול הבנקים" />
           <NextStep href="/documents" title="מסמכים" desc="העלאת מסמכים נדרשים" />
+          <NextStep href="/tender" title="מכרז בנקים" desc="אישורים עקרוניים וריביות" />
+          <NextStep href="/messages" title={unread > 0 ? `הודעות ליועץ · ${unread} חדשות` : "הודעות ליועץ"} desc="שאלות וליווי אישי" />
+          {hasActive && <NextStep href="/active" title="המשכנתא הפעילה" desc="יתרות, מסלולים והתקדמות" />}
         </div>
       </main>
       <AppFooter />
