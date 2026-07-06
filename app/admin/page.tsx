@@ -12,6 +12,14 @@ async function count(table: string, filter?: [string, string]): Promise<number> 
   return count ?? 0;
 }
 
+// New clients arrive with no advisor (self-registration creates the request
+// directly); "leads" for the manager = requests still waiting for assignment.
+async function countUnassigned(): Promise<number> {
+  const { count } = await (await supabaseServer())
+    .from("requests").select("*", { count: "exact", head: true }).is("advisor_id", null);
+  return count ?? 0;
+}
+
 export default async function AdminPage() {
   await requireRole("admin");
   const [clients, advisors, requests, paid, leads] = await Promise.all([
@@ -19,7 +27,7 @@ export default async function AdminPage() {
     count("profiles", ["role", "advisor"]),
     count("requests"),
     count("requests", ["service_status", "PAID"]),
-    count("requests", ["status", "lead"]),
+    countUnassigned(),
   ]);
 
   const cards = [
@@ -32,12 +40,12 @@ export default async function AdminPage() {
     <>
       <AppHeader />
       <DashHeader eyebrow="אזור הניהול" title="לוח בקרה — מנהל מערכת" variant="manager">
-        <DashStat label="לידים חדשים" value={leads} />
+        <DashStat label="לידים ממתינים לשיוך" value={leads} />
         <DashStat label="יועצים פעילים" value={advisors} accent="#FFD98A" />
       </DashHeader>
       <main className="mx-auto w-full max-w-[1140px] flex-1 px-5 py-8 sm:px-7">
         <div className="mb-6 grid grid-cols-2 gap-4 sm:grid-cols-5">
-          <KPI label="לידים חדשים" value={leads} />
+          <KPI label="לידים ממתינים לשיוך" value={leads} />
           <KPI label="לקוחות" value={clients} />
           <KPI label="יועצים" value={advisors} />
           <KPI label="בקשות" value={requests} />
