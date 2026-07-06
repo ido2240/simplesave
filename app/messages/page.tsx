@@ -31,7 +31,7 @@ export default async function ClientMessagesPage() {
   const thread: ThreadMessage[] = (msgs ?? []).map((m) => ({
     id: m.id,
     body: m.body,
-    authorName: (m as unknown as { author: { full_name: string } }).author.full_name,
+    authorName: (m as unknown as { author: { full_name: string } | null }).author?.full_name ?? "יועץ",
     mine: m.author_id === user.id,
   }));
 

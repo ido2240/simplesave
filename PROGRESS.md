@@ -377,3 +377,38 @@ Supabase project also contains an unrelated freelancer-marketplace schema
 ### Phase 2 gate
 `GAP.md` grades every mockup screen (✅/🟡/❌) with three scope tiers —
 **awaiting owner scope selection before building anything**.
+
+---
+
+## Step 9 — Phases A+B: full mockup parity build + verification (2026-07-06)
+
+### Phase A — everything remaining from GAP.md (all tiers)
+- **Tier 1:** questionnaire live LTV/equity/DTI hints (engine's own pure rule
+  functions, client-side); mix-detail donut + charts↔table tabs + annual
+  amortization table + cumulative-payments and monthly-payment charts (all
+  from the engine's real schedules via `lib/schedule.ts`); clocks selection
+  bar (sticky save-and-continue); personal-area 8-step journey stepper
+  (`lib/stage.ts`); 6-item document checklist (live כתבי הסמכה item + required/
+  optional badges + progress); client messages page with read-tracking;
+  registration consent (required checkbox + `accepted_terms_at`).
+- **Tier 2:** advisor unread badges + personal tasks CRUD; manager advisor-load
+  view (/admin/advisors); visual template editor (≤10 tracks, share bars +
+  donut, sum=100 validation, subtitle + display-risk slider).
+- **Tier 3:** bank tender (client screen + advisor offer management, best-offer
+  marking); active-mortgage management (client screen + advisor execution
+  entry; refi-opportunity banner); refinance per-track editor (≤10 tracks →
+  balance-weighted aggregate into the engine comparison); insurance comparison
+  with owner-approved demo tariffs — labeled as estimates everywhere (D-7).
+- **Hardening shipped alongside:** terms + privacy pages (Takana 13), global
+  Hebrew error boundary, root SEO/OG metadata, sliding-window rate limiting on
+  auth actions + all POST APIs, migration `0010_mockup_domains` (new tables +
+  RLS), migration `0011_profiles_advisor_visibility` (real RLS bug found by the
+  suite: clients couldn't read their assigned advisor's profile → client chat
+  500'd on advisor replies).
+
+### Phase B — verification (local Supabase only)
+`e2e/verify-full.mjs`: **77/77 checks green**, covering the full fresh-user
+journey incl. edge cases (invalid DTI, equity shortfall, already-paid guards,
+empty tender, role-based access client/advisor/manager) and every new screen.
+`npm test` 2/2 (engine parity intact — `lib/engine/` untouched all phases) ·
+`npm run build` green (30 routes).
