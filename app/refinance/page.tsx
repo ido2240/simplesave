@@ -1,6 +1,7 @@
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import ClockCard from "@/components/ClockCard";
+import RefiTracksForm from "@/components/RefiTracksForm";
 import { toClockCardData } from "@/lib/clock-card-data";
 import { computeClocks, loadMarketParams } from "@/lib/engine-config";
 import { blankRoute, calcMix, mixRisk } from "@/lib/engine";
@@ -63,33 +64,16 @@ export default async function RefinancePage({
           <p className="mt-2 text-ink-2">הזינו את פרטי המשכנתא הקיימת ומטרת המחזור — נחשב חמישה תמהילים חלופיים ונשווה אליהם.</p>
         </div>
 
-        <form method="get" className="card grid grid-cols-1 gap-4 rounded-2xl p-6 sm:grid-cols-3">
-          <label className="block"><span className="lbl mb-1 block">יתרת משכנתא (₪)</span>
-            <input name="balance" type="number" defaultValue={balance || 1200000} className={field} /></label>
-          <label className="block"><span className="lbl mb-1 block">שנים שנותרו</span>
-            <input name="years" type="number" min={1} max={30} defaultValue={years || 18} className={field} /></label>
-          <label className="block"><span className="lbl mb-1 block">ריבית נוכחית (%)</span>
-            <input name="rate" type="number" step="0.01" defaultValue={rate || 5.2} className={field} /></label>
-          <label className="block"><span className="lbl mb-1 block">המשכנתא הקיימת צמודת מדד?</span>
-            <select name="indexed" defaultValue={indexed ? "1" : "0"} className={field}>
-              <option value="0">לא צמודה</option>
-              <option value="1">צמודה למדד</option>
-            </select></label>
-          <label className="block"><span className="lbl mb-1 block">מטרת המחזור</span>
-            <select name="goal" defaultValue={goal} className={field}>
-              {GOALS.map((g) => <option key={g.value} value={g.value}>{g.label}</option>)}
-            </select></label>
-          <div className="hidden sm:block" />
-          <label className="block"><span className="lbl mb-1 block">החזר רצוי מ- (₪)</span>
-            <input name="min" type="number" defaultValue={min || 5000} className={field} /></label>
-          <label className="block"><span className="lbl mb-1 block">עד- (₪)</span>
-            <input name="max" type="number" defaultValue={max || 8000} className={field} /></label>
-          <div className="self-end">
-            <button className="press w-full rounded-xl bg-gradient-to-br from-[#1fb47b] to-[#0e7a50] py-3 font-bold text-white shadow-[0_12px_24px_-8px_rgba(21,151,106,0.4)]">
-              חשב והשווה ←
-            </button>
-          </div>
-        </form>
+        <RefiTracksForm
+          defaults={[
+            { balance: balance ? String(balance) : "650000", rateType: "fixed", rate: rate ? String(rate) : "4.9", endDate: "2039-06", linked: indexed },
+            { balance: "450000", rateType: "prime", rate: "5.6", endDate: "2034-06", linked: false },
+          ]}
+          goals={GOALS}
+          initialGoal={goal}
+          initialMin={min || 5000}
+          initialMax={max || 8000}
+        />
 
         {show && existing && (
           <>
