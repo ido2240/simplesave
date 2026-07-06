@@ -4,6 +4,7 @@ import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import RiskGauge from "@/components/RiskGauge";
 import AmortizationChart, { type YearPoint } from "@/components/AmortizationChart";
+import PendingButton from "@/components/PendingButton";
 import { requireRole } from "@/lib/session";
 import { getActiveRequest } from "@/lib/requests";
 import { computeOneClock } from "@/lib/engine-config";
@@ -34,11 +35,11 @@ export default async function ClockDetail({
   params, searchParams,
 }: {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ choose?: string }>;
+  searchParams: Promise<{ choose?: string; error?: string }>;
 }) {
   const user = await requireRole("client");
   const { id } = await params;
-  const { choose } = await searchParams;
+  const { choose, error } = await searchParams;
   const req = await getActiveRequest(user.id);
   if (!req?.details || req.details.loan_amount <= 0) notFound();
 
@@ -95,9 +96,16 @@ export default async function ClockDetail({
         </div>
 
         <div className="mt-6">
+          {error === "save" && (
+            <div className="mb-4 rounded-xl border border-risk-high bg-[#fceeec] p-4 text-sm font-semibold text-risk-high">
+              שמירת התמהיל נכשלה. נסו שוב.
+            </div>
+          )}
           {choose ? (
             <form action={chooseClock.bind(null, clock.key)}>
-              <button className="btn-primary press w-full py-3.5 text-base">שמור תמהיל זה והמשך לאזור האישי ←</button>
+              <PendingButton className="btn-primary press w-full py-3.5 text-base" pendingLabel="שומר…">
+                שמור תמהיל זה והמשך לאזור האישי ←
+              </PendingButton>
             </form>
           ) : (
             <Link href={`/new-mortgage/clock/${clock.key}?choose=1`} className="btn-primary press block py-3.5 text-center text-base">בחר תמהיל זה</Link>

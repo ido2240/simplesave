@@ -1,8 +1,9 @@
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { requireRole } from "@/lib/session";
 import { supabaseServer } from "@/lib/supabase-server";
 import { shekel } from "@/lib/format";
 import { SERVICE_PRICE_ILS } from "@/lib/billing";
+import PendingButton from "@/components/PendingButton";
 import { confirmPayment } from "../actions";
 
 // Mock hosted-checkout (stands in for Stripe Checkout / a local PSP).
@@ -10,13 +11,15 @@ export default async function HostedCheckout({ searchParams }: { searchParams: P
   const user = await requireRole("client");
   const { rid } = await searchParams;
   if (!rid) notFound();
-  const { data: req } = await (await supabaseServer()).from("requests").select("id, client_id").eq("id", rid).maybeSingle();
+  const { data: req } = await (await supabaseServer())
+    .from("requests").select("id, client_id, service_status").eq("id", rid).maybeSingle();
   if (!req || req.client_id !== user.id) notFound();
+  if (req.service_status === "PAID") redirect("/personal?paid=1");
 
   return (
     <main className="flex min-h-screen items-center justify-center p-6" style={{ background: "linear-gradient(135deg,#0c1838,#22409b)" }}>
       <div className="w-full max-w-sm rounded-3xl bg-white p-7 shadow-2xl">
-        <p className="lbl mb-1">תשלום מאובטח (סביבת בדיקה · Sandbox)</p>
+        <p className="lbl mb-1">תשלום דמו (Sandbox) — ללא חיוב אמיתי</p>
         <h1 className="display mb-4 text-2xl font-bold">SimpleSave מלא</h1>
         <div className="mb-5 flex justify-between border-y border-rule py-3">
           <span>לתשלום</span><span className="num display font-bold">{shekel(SERVICE_PRICE_ILS)}</span>
@@ -29,8 +32,11 @@ export default async function HostedCheckout({ searchParams }: { searchParams: P
           </div>
         </div>
         <form action={confirmPayment.bind(null, rid)}>
-          <button className="btn-primary press w-full py-3.5">שלם {shekel(SERVICE_PRICE_ILS)}</button>
+          <PendingButton className="btn-primary press w-full py-3.5" pendingLabel="מעבד תשלום…">
+            שלם {shekel(SERVICE_PRICE_ILS)}
+          </PendingButton>
         </form>
+        <p className="mt-3 text-center text-[11px] text-ink-3">סביבת דמו — לחיצה על ״שלם״ מדמה סליקה מוצלחת.</p>
       </div>
     </main>
   );

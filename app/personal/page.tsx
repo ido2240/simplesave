@@ -8,10 +8,12 @@ import { computeOneClock } from "@/lib/engine-config";
 import { listSecurities } from "@/lib/securities";
 import { shekel } from "@/lib/format";
 
-export default async function PersonalPage() {
+export default async function PersonalPage({ searchParams }: { searchParams: Promise<{ paid?: string }> }) {
   const user = await requireRole("client");
+  const { paid: justPaid } = await searchParams;
   const req = await getActiveRequest(user.id);
   const d = req?.details;
+  const isPaid = req?.service_status === "PAID";
 
   let chosen = null;
   if (req?.chosen_clock_id && d && d.loan_amount > 0) {
@@ -28,6 +30,12 @@ export default async function PersonalPage() {
       </DashHeader>
 
       <main className="mx-auto w-full max-w-[1100px] flex-1 px-5 py-8 sm:px-7">
+        {justPaid === "1" && isPaid && (
+          <div className="mb-6 rounded-2xl border border-[#bfe8d2] bg-[#e7f6ef] p-5">
+            <p className="font-bold text-refi">✓ התשלום התקבל — השירות המלא פעיל!</p>
+            <p className="mt-0.5 text-sm text-[#2f7d57]">השלב הבא: חתימה על כתבי ההרשאה מול הבנקים.</p>
+          </div>
+        )}
         {!d ? (
           <div className="card rounded-2xl p-8 text-center">
             <p className="mb-5 text-ink-2">עוד לא מילאת שאלון משכנתא.</p>
@@ -55,7 +63,7 @@ export default async function PersonalPage() {
           </div>
         )}
 
-        {d && req && req.service_status !== "PAID" && (
+        {d && req && !isPaid && (
           <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#f0debe] bg-[#fbf1e2] p-5">
             <div>
               <p className="font-bold text-[#8a5208]">שדרגו לשירות המלא</p>
@@ -67,6 +75,16 @@ export default async function PersonalPage() {
             >
               שדרג ←
             </Link>
+          </div>
+        )}
+
+        {d && req && isPaid && (
+          <div className="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#bfe8d2] bg-[#f2faf6] p-5">
+            <div>
+              <p className="font-bold text-[#1f6b46]">השירות המלא פעיל</p>
+              <p className="text-sm text-[#2f7d57]">המשיכו בתהליך: חתימת כתבי הרשאה ולאחריה העלאת מסמכים.</p>
+            </div>
+            <Link href="/authorizations" className="btn-primary press px-5 py-2.5 text-sm">המשך לכתבי הרשאה ←</Link>
           </div>
         )}
 
