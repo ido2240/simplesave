@@ -497,3 +497,19 @@ Per-item findings:
   table: re-insert from the pre-migration JSON snapshot.
 
 ### Gate → awaiting owner sign-off on the preview before merge to main.
+
+### Preview smoke-test round 1 — bug found + fixed
+Owner hit a document-upload failure on the preview. Root cause: Next.js caps
+server-action bodies at **1MB** by default, so any real scan/photo >1MB was
+rejected before the action ran (opaque 500 → error boundary) even though the
+UI promises 10MB. The E2E suite had used a 40-byte PDF and missed it. Fix:
+`next.config` `serverActions.bodySizeLimit = "12mb"` + client-side size/type
+guard (`DocUploadForm`); E2E now uploads a 1.6MB file (78/78 green). Redeployed
+preview: ido-new-project-cuj2bcqm7.
+
+Note on "continue to the end": after the client uploads documents, the
+remaining stages (bank tender / principal approval / executed mortgage) are
+**advisor-driven by design** — a client cannot self-approve their own bank
+tender. Full end-to-end requires: manager assigns the client to an advisor →
+advisor approves docs, adds bank offers, opens the active mortgage → the
+client then sees /tender results, /active, and the 8-step stepper completes.
