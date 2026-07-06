@@ -24,12 +24,11 @@ export default function TrackDonut({
 }) {
   const cx = 70, cy = 70, R = 58, r = 36;
   const total = shares.reduce((s, v) => s + v, 0) || 1;
-  let acc = 0;
+  const starts = shares.map((_, i) => shares.slice(0, i).reduce((s, v) => s + v, 0));
   const segs = shares.map((v, i) => {
     if (v <= 0) return null;
-    const a0 = (acc / total) * 360;
-    const a1 = ((acc + v) / total) * 360;
-    acc += v;
+    const a0 = (starts[i] / total) * 360;
+    const a1 = ((starts[i] + v) / total) * 360;
     const large = a1 - a0 > 180 ? 1 : 0;
     // Guard the full-circle case (single 100% slice) — arcs need two points.
     const end = a1 - a0 >= 359.99 ? a1 - 0.01 : a1;

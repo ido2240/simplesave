@@ -8,8 +8,6 @@ import { blankRoute, calcMix, mixRisk } from "@/lib/engine";
 import { shekel } from "@/lib/format";
 import { displayRiskLabel } from "@/lib/display-risk";
 
-const field = "num w-full rounded-xl border border-rule-strong bg-paper px-3.5 py-2.5 outline-none focus:border-refi";
-
 const GOALS: { value: string; label: string }[] = [
   { value: "savings", label: "חיסכון בסך ההחזרים" },
   { value: "lower_payment", label: "הקטנת החזר חודשי" },
