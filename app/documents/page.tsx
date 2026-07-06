@@ -2,12 +2,11 @@ import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import DocStatusBadge from "@/components/DocStatusBadge";
-import PendingButton from "@/components/PendingButton";
+import DocUploadForm from "@/components/DocUploadForm";
 import { requireRole } from "@/lib/session";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getActiveRequest } from "@/lib/requests";
 import { requirePaid } from "@/lib/billing";
-import { uploadDocument } from "./actions";
 
 // Mockup 6-item checklist: 5 uploadable document rows + כתבי הסמכה, whose
 // status derives live from the authorizations screen.
@@ -78,19 +77,7 @@ export default async function DocumentsPage() {
                 </div>
                 <div className="flex items-center gap-3">
                   <DocStatusBadge status={doc.status} />
-                  <form action={uploadDocument.bind(null, doc.id)} className="flex items-center gap-2">
-                    <input
-                      type="file"
-                      name="file"
-                      required
-                      accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-                      className="max-w-[150px] text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-paper-2 file:px-2 file:py-1 file:text-xs"
-                      aria-label={`בחירת קובץ — ${doc.kind}`}
-                    />
-                    <PendingButton className="btn-ghost press px-3.5 py-1.5 text-sm" pendingLabel="מעלה…">
-                      {doc.status === "לא הועלה" ? "העלה" : "החלף"}
-                    </PendingButton>
-                  </form>
+                  <DocUploadForm docId={doc.id} kind={doc.kind} status={doc.status} />
                 </div>
               </li>
             ))

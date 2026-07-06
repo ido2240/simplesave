@@ -130,11 +130,13 @@ check((await page.getByText("✓ נחתם").count()) === 3, "3/3 signed");
 await page.goto(`${BASE}/documents`, { waitUntil: "networkidle" });
 check((await page.getByText("הערכת שמאי").count()) === 1, "appraisal doc listed");
 check((await page.getByText("לא חובה בשלב זה").count()) === 1, "optional badge on appraisal");
-writeFileSync("/tmp/test-doc.pdf", "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
+// >1MB file guards the server-action bodySizeLimit (default 1MB would 500)
+writeFileSync("/tmp/test-doc.pdf", "%PDF-1.4\n" + "0".repeat(1_600_000));
 await page.locator('input[type="file"]').first().setInputFiles("/tmp/test-doc.pdf");
 await clickAction(page, page.locator('form:has(input[type="file"]) button').first());
-await page.waitForTimeout(2000);
-check((await page.getByText("ממתין לבדיקה").count()) >= 1, "upload → pending review");
+await page.waitForTimeout(2500);
+check((await page.getByText("משהו השתבש").count()) === 0, "large upload did not error (bodySizeLimit)");
+check((await page.getByText("ממתין לבדיקה").count()) >= 1, "1.6MB upload → pending review");
 
 log("\n### 7. CLIENT MESSAGES");
 await page.goto(`${BASE}/messages`, { waitUntil: "networkidle" });
