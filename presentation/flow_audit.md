@@ -146,3 +146,76 @@ clocks → choose → pay → sign 3 authorizations → upload document), then
 `dan@simplesave.co.il` sees the client + document after manager assignment on
 `/admin/leads`, manager dashboard shows the new client, `npm test` and
 `npm run build` green. Before/after appended per issue below.
+
+---
+
+# Before / after (step 3 results)
+
+All "after" results are from a scripted Chromium walk of a **fresh
+self-registered client** (register → questionnaire → clocks → choose → paywall
+→ sandbox pay → sign 3 authorizations → upload document), then the manager and
+advisor journeys — **27/27 checks passed**. Test accounts and their storage
+objects were removed afterwards; the demo DB is back to its real state.
+
+### BUG 1 — questionnaire defaults fail DTI validation
+- **Before:** untouched prefilled form → `מקסימום תשלום (10,000 ₪) חורג מכושר
+  החזר (5,320 ₪, 38%).`; user stuck on `/new-mortgage`; no request row created.
+- **After:** default income 30,000 ₪ (capacity 11,400 ₪); untouched form submits
+  straight to `/new-mortgage/clocks` (5 cards). The form now shows the computed
+  capacity live (`כושר החזר משוער …`) and warns inline when the desired max
+  exceeds it, before submit. Engine validation unchanged (parity green).
+  Fix: `app/new-mortgage/page.tsx`, `components/NewMortgageForm.tsx`,
+  `supabase/seed.ts` (+ live demo borrower row aligned).
+
+### BUG 2 — no pending feedback on checkout buttons
+- **Before:** "המשך לתשלום" / "שלם" inert for the 1–3 s action round-trip;
+  double-submit possible; the reproduction "abandoned" here exactly like the
+  stuck production user.
+- **After:** all flow buttons (checkout, pay, sign, choose clock) disable
+  themselves and show a Hebrew pending label (`מעבד תשלום…`, `חותם…`, `שומר…`)
+  via `components/PendingButton.tsx` (`useFormStatus`). One clear click
+  completes the sandbox payment.
+
+### BUG 3 — silent write failures → unpaid paywall loop
+- **Before:** `confirmPayment` redirected to `/personal` regardless of whether
+  the `PAID` update landed; failures were invisible.
+- **After:** the update is read back; failure → `/checkout?error=payment` with a
+  Hebrew error banner; success → `/personal?paid=1` with a success banner.
+  Same read-back added to `signAuthorization` and `chooseClock`.
+  Verified: payment lands on `/personal?paid=1`, banner shown, gated pages open.
+
+### BUG 4 — dead ends
+- **Before:** paid `/checkout` had no onward link; `startCheckout`/hosted page
+  let a paid user pay again; empty `/authorizations` was a dead wall; nothing
+  told a paid user what the next step is.
+- **After:** paid `/checkout` links to `/authorizations` + `/personal`;
+  `startCheckout` and the hosted page redirect already-paid requests to
+  `/personal`; `/personal` shows a green "השירות המלא פעיל" strip with
+  "המשך לכתבי הרשאה ←"; empty authorizations list gets a fallback CTA; paying
+  also backfills missing authorization/document rows (`ensureOnboardingRows`)
+  so the service never unlocks empty.
+
+### BUG 5 — sandbox labeling
+- **Before:** "תשלום מאובטח (סביבת בדיקה · Sandbox)".
+- **After:** both `/checkout` and the hosted page carry **"תשלום דמו (Sandbox)"**
+  (verified present on both pages during the walk). The paywall itself is
+  untouched — unpaid `/authorizations` still redirects to `/checkout` (verified).
+
+### BUG 6 — fresh client invisible to advisor/manager
+- **Before:** manager KPI counted `status='lead'` (never created) → always 0;
+  dan saw nothing until manual assignment nobody was prompted to do.
+- **After:** dashboard KPI "לידים ממתינים לשיוך" counts unassigned requests
+  (showed 3 during verification); the new client appears on `/admin/leads`,
+  assignment to דן יועץ works, and dan's dashboard then shows the client card
+  with "בדיקת 1 מסמכים" and the uploaded file as ממתין לבדיקה in the client file.
+
+### RLS / migration 0008
+Not needed. Every legitimate client action (request insert/update incl.
+`service_status`, authorization signing, document update, storage upload) was
+verified to pass under migration 0007, both through the UI and directly against
+PostgREST with a client-role JWT. The 0008 slot stays reserved for a future
+real policy gap.
+
+### Gates
+- `npm test` — 2/2 green (engine parity intact; `lib/engine/` untouched).
+- `npm run build` — green (all routes compile).

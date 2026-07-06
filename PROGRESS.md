@@ -289,3 +289,50 @@ removed at the end (after parity was green). See `PORT_PLAN.md`.
 ### Removed
 `src/`, `tests/`, `alembic*`, `pyproject.toml`, `frontend/`, Python caches and
 `.venv/`. Kept `reference/` (source simulator) and `golden.json` (frozen parity).
+
+---
+
+## Step 7 — End-to-end client-flow fix: questionnaire → paywall → full service (2026-07-06)
+
+### What was done
+Reproduced the "client stuck at the paywall" report with a scripted browser
+(local dev + deployed prod), audited the breaks in `presentation/flow_audit.md`
+(written before any fix), then fixed the flow. Engine untouched; paywall kept.
+
+### Root causes found
+1. The questionnaire's default prefill (income 14,000, desired 7,000–10,000)
+   failed the engine's own 38% DTI rule — an untouched form could never submit,
+   so most new users never created a request at all.
+2. Checkout/pay/sign buttons had no pending state — 1–3 s server actions looked
+   like a dead page, causing abandonment at the paywall.
+3. `confirmPayment` (and siblings) ignored write results — any failure became a
+   silent unpaid redirect loop.
+4. Dead ends: paid `/checkout` had no onward CTA, empty authorizations list was
+   a wall, paid users could reach the pay page again.
+5. Manager "לידים" KPI counted `status='lead'`, which nothing creates → fresh
+   clients were invisible until manual advisor assignment nobody was nudged to do.
+
+### Fixes (files)
+- `app/new-mortgage/page.tsx`, `components/NewMortgageForm.tsx` — coherent
+  default scenario (income 30,000) + live DTI capacity hint; `supabase/seed.ts`
+  and the live demo borrower aligned.
+- `components/PendingButton.tsx` (new) — pending/disabled submit for all flow
+  actions.
+- `app/checkout/*` — verified payment write, `?error=payment` banner,
+  already-paid guards, onboarding-row backfill on payment, success banner +
+  next-step CTA on `/personal`, "תשלום דמו (Sandbox)" labels.
+- `app/authorizations/*`, `app/new-mortgage/clock/[id]/*` — read-back on
+  writes, Hebrew error banners, empty-state fallback.
+- `app/admin/page.tsx` — KPI now counts requests awaiting advisor assignment.
+
+### RLS
+Migration 0007 verified NOT to block any legitimate client action (UI + direct
+PostgREST with client JWT); no 0008 needed.
+
+### Verification (all green)
+Fresh self-registered user end-to-end (27 scripted checks): register →
+questionnaire (untouched defaults) → 5 clocks → choose → paywall redirect →
+sandbox pay in one click → sign 3 authorizations → upload document; manager
+dashboard shows the unassigned lead and assigns dan; dan sees the client card
+and the pending document. `npm test` 2/2 (parity intact) · `npm run build`
+green. Test users and storage removed; demo DB restored.
