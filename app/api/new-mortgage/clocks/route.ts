@@ -1,9 +1,9 @@
 // POST /api/new-mortgage/clocks — validate a questionnaire and return 5 clocks.
 import { NextResponse } from "next/server";
-import { generateAllClocks, validateNewMortgage } from "@/lib/engine";
+import { DEFAULT_PAYMENT_TO_INCOME_RATIO, generateAllClocks, validateNewMortgage } from "@/lib/engine";
 import { newMortgageSchema } from "@/lib/api-schemas";
 
-const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || 0.38);
+const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || DEFAULT_PAYMENT_TO_INCOME_RATIO);
 const MAX_AGE = Number(process.env.MAX_AGE_NEW_MORTGAGE || 85);
 
 export async function POST(req: Request) {

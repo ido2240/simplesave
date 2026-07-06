@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { requireRole } from "@/lib/session";
 import {
+  DEFAULT_PAYMENT_TO_INCOME_RATIO,
   computeLoanAmountNew,
   validateNewMortgage,
   type LoanType,
@@ -16,7 +17,7 @@ export interface SaveState {
   issues: ValidationIssue[];
 }
 
-const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || 0.38);
+const RATIO = Number(process.env.PAYMENT_TO_INCOME_RATIO || DEFAULT_PAYMENT_TO_INCOME_RATIO);
 const MAX_AGE = Number(process.env.MAX_AGE_NEW_MORTGAGE || 85);
 
 /** Persist the questionnaire after server-side validation. Returns issues on

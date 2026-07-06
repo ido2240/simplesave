@@ -40,9 +40,12 @@ the Python golden battery (`golden.json`, 140 cases) — max diff 1.86e-9. Keep 
 green; it is the safety net for any engine change.
 
 ## Carried-forward decisions (see DECISIONS.md — don't silently change)
-- **5 clocks = reference templates verbatim**: clock4 == clock1, clock5 ≈ clock3
-  (reference quirk) — kept as defaults, **flagged** via `duplicate_of`.
-- DTI **38%**; max age **85** new / **80** refinance; indexation **annual**.
+- **5 clocks = the definitive mockup's templates** (D-2 rev. 2026-07-06):
+  סולידי/מאוזן/מומלץ★/גמיש/אגרסיבי, fixed/variable/prime 70/20/10 → 20/30/50,
+  per-template `display_risk` 24→84 with mockup label thresholds (D-6).
+  Payments always from the validated engine, never the mockup's flat annuity.
+- DTI **40%** (D-3 rev.); max age **85** new / **80** refinance (D-5 resolved);
+  indexation **annual**.
 - Insurance + balance-PDF parsing **blocked** until real tariff/parse engines —
   never fabricate numbers.
 

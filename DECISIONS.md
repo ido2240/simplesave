@@ -6,30 +6,21 @@ Tracks open and resolved decisions. When a decision is resolved, fill in the cho
 
 ## Open decisions
 
-### D-6: Strategy risk labels vs. the validated risk engine
-**Question:** The spec §4 assigns intuitive risk levels to each strategy (e.g. "Safe =
-fixed rate → LOW risk"). But the **validated** reference risk engine (`default_risk_rules`)
-scores **fixed-rate routes as HIGH (3–4)** and **prime as LOW (1)**. So a 100%-fixed "בטוח
-(Safe)" clock shows as *high* on the speedometer — contradicting its name. The risk math is
-ported verbatim and must not be changed (CLAUDE.md §3).
-**Options:** (a) display the engine-computed risk and rename/re-tune the seed clocks so the
-ordering matches; (b) let the manager set a displayed risk label per clock, separate from
-the engine score; (c) confirm the engine's definition of "risk" is authoritative and adjust
-the spec wording.
-**Status:** OPEN — surfaced 2026-06-25. Does not block the build (clocks are
-manager-configurable); affects the speedometer labelling only.
+### D-6: Strategy risk labels vs. the validated risk engine — RESOLVED 2026-07-06
+**Chosen: option (b)** — a **display risk score (0–100) stored per clock
+template** (`clock_templates.display_risk`, manager-editable), labelled with
+the definitive mockup's thresholds (`<35 נמוך · <50 נמוך-בינוני · <65 בינוני ·
+<78 בינוני-גבוה · אחרת גבוה`). The ported risk engine stays untouched and its
+score remains available internally; the speedometer shows the display score.
+Owner-approved 2026-07-06 together with the mockup template adoption (D-2).
 
 ---
 
-### D-5: Maximum borrower age — refinance flow
-**Question:** The refinance section conflicts with itself in the spec — the question
-table says **80**, the explanation of the same screen says **85**. Which applies to
-refinance?
-**Status:** OPEN — user to provide the calculation HTML to confirm.
-**Interim:** `MAX_AGE_REFINANCE` defaults to **80** (the value in the structured table)
-and is configurable; will be finalised once the HTML is reviewed.
-**Blocked work:** Final age validation in the refinance calculator (logic already
-parameterised, so only the number is pending).
+### D-5: Maximum borrower age — refinance flow — RESOLVED 2026-07-06
+**Chosen: 80.** Full-text extraction of the spec (`עיצוב מערכת 6.26.docx`,
+refinance section: "מגביל את תקופת המשכנתא עד לגיל 80") confirms 80; the
+definitive mockup has no competing age rule. Matches the existing
+`MAX_AGE_REFINANCE=80` default — no code change needed.
 
 ---
 
@@ -40,7 +31,17 @@ The spec listed "Short-term" twice (a typo). Clock 2 is now **תמהיל מאו�
 the classic thirds mix (fixed-unlinked / variable-unlinked / prime). Editable by the
 manager.
 
-### D-2: Five-clock definitions — UPDATED 2026-06-26 (reference templates verbatim, flagged)
+### D-2: Five-clock definitions — UPDATED 2026-07-06 (mockup templates adopted)
+Per the owner's 2026-07-06 approval, the seed templates are now the definitive
+mockup's five mixes on a solid→aggressive axis (fixed/variable/prime shares):
+**סולידי 70/20/10 (risk 24) · מאוזן 55/25/20 (40) · מומלץ★ 45/25/30 (55) ·
+גמיש 33/27/40 (70) · אגרסיבי 20/30/50 (84)** — recommended = מומלץ. Payments
+are computed by the validated engine (per-route Spitzer + tuner), NOT the
+mockup's illustrative single-rate annuity; the mockup's 4.9→3.7% are display
+approximations, not inputs. The clock4/clock5 duplication quirk is gone
+(`duplicate_of` = null). Templates remain manager-editable data.
+
+Earlier (2026-06-26) resolution — superseded:
 Per the project owner's directive, the five clocks now use the **reference simulator
 templates verbatim** — including the reference quirk that clock4 == clock1 and
 clock5 ≈ clock3. They are kept as defaults but **flagged** (`duplicate_of` /
@@ -60,9 +61,15 @@ Per the user's decision, the clocks are **manager-configurable** (`clock_templat
 table + `/admin/clock-templates`). These compositions are seed defaults; the exact final
 percentages remain subject to business sign-off but no longer block the build.
 
-### D-3: Payment-to-income ratio — RESOLVED 2026-06-25
-**Chosen: 38%** (per the main questionnaire table; also the Base44 value). Configurable
-via `PAYMENT_TO_INCOME_RATIO`.
+### D-3: Payment-to-income ratio — RESOLVED 2026-06-25, REVISED 2026-07-06
+**Chosen: 40%** (revised). The spec contradicts itself — 38% in the lead-intake
+table vs **40%** on the main-flow "תשלום חודשי רצוי" question — and the
+definitive interactive mockup (`reference/simplesave-mockup.html`,
+`finance().maxMonthly = income * 0.4`) uses 40%. The main-flow value wins;
+40% is also within Bank-of-Israel practice. Owner-approved 2026-07-06.
+Configurable via `PAYMENT_TO_INCOME_RATIO`; engine default
+`DEFAULT_PAYMENT_TO_INCOME_RATIO = 0.4`.
+Earlier (2026-06-25) resolution — superseded: 38% per the questionnaire table.
 
 ### D-4: Maximum borrower age — new-mortgage flow — RESOLVED 2026-06-25
 **Chosen: 85** (consistent across the spec's new-mortgage question table and explanation).

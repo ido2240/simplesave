@@ -141,7 +141,7 @@ Set these in **Project → Settings → Environment Variables** (Production):
 | `SUPABASE_URL` | — |
 | `SUPABASE_ANON_KEY` | sensitive |
 | `SUPABASE_SERVICE_ROLE_KEY` | **secret**, server-only (seed/admin); never `NEXT_PUBLIC_*` |
-| `PAYMENT_TO_INCOME_RATIO` | `0.38` |
+| `PAYMENT_TO_INCOME_RATIO` | `0.40` |
 | `MAX_AGE_NEW_MORTGAGE` | `85` |
 | `MAX_AGE_REFINANCE` | `80` |
 

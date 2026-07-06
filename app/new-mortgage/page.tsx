@@ -2,6 +2,7 @@ import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import NewMortgageForm, { type BorrowerSeed, type FormDefaults } from "@/components/NewMortgageForm";
 import { requireRole } from "@/lib/session";
+import { DEFAULT_PAYMENT_TO_INCOME_RATIO } from "@/lib/engine";
 import { getActiveRequest } from "@/lib/requests";
 import { supabaseServer } from "@/lib/supabase-server";
 
@@ -47,7 +48,7 @@ export default async function NewMortgagePage() {
     fixedExpenses,
   };
 
-  const paymentRatio = Number(process.env.PAYMENT_TO_INCOME_RATIO || 0.38);
+  const paymentRatio = Number(process.env.PAYMENT_TO_INCOME_RATIO || DEFAULT_PAYMENT_TO_INCOME_RATIO);
 
   return (
     <>

@@ -4,7 +4,7 @@
 export type LoanType = "single_property" | "additional_property" | "all_purpose" | "improvement";
 export type PropertySource = "contractor" | "second_hand" | "target_price" | "self_build";
 
-export const DEFAULT_PAYMENT_TO_INCOME_RATIO = 0.38; // D-3
+export const DEFAULT_PAYMENT_TO_INCOME_RATIO = 0.4; // D-3 (rev. 2026-07-06: 40% per mockup + spec main-flow question)
 export const DEFAULT_MAX_AGE_NEW_MORTGAGE = 85; // D-4
 export const DEFAULT_MAX_AGE_REFINANCE = 80; // D-5
 export const MIN_BORROWER_AGE = 18;
