@@ -34,6 +34,7 @@ export default async function AdminPage() {
     { href: "/admin/params", title: "פרמטרים כלכליים", desc: "מדד, מט\"ח, ריבית פריים — משנה את השעונים" },
     { href: "/admin/templates", title: "תבניות שעונים", desc: "5 התמהילים + סימון כפילויות" },
     { href: "/admin/leads", title: "לידים ושיוך", desc: "שיוך לקוחות ליועצים" },
+    { href: "/admin/advisors", title: "עומס יועצים", desc: "לקוחות, תיקים פעילים וסגורים לכל יועץ" },
   ];
 
   return (
@@ -51,7 +52,7 @@ export default async function AdminPage() {
           <KPI label="בקשות" value={requests} />
           <KPI label="שילמו" value={paid} />
         </div>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {cards.map((c) => (
             <Link key={c.href} href={c.href} className="card lift press rounded-2xl p-6">
               <p className="display text-xl font-bold">{c.title}</p>
