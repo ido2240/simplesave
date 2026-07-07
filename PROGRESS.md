@@ -513,3 +513,17 @@ remaining stages (bank tender / principal approval / executed mortgage) are
 tender. Full end-to-end requires: manager assigns the client to an advisor →
 advisor approves docs, adds bank offers, opens the active mortgage → the
 client then sees /tender results, /active, and the 8-step stepper completes.
+
+### Preview smoke-test round 2 — inline feedback + dedicated upload gate
+The 1MB body-limit fix (round 1) still left the UI mute: server-side failures
+threw to the global error page and success was only visible via the badge
+after a refresh-race. Now `uploadDocument` returns structured `{ok, error}`
+results (unsigned-auths gate, bad type/size, storage failure, and the
+previously-unchecked post-upload row update), and `DocUploadForm` surfaces
+them inline via `useActionState` — pending "מעלה…", red error text, and an
+explicit "✓ הקובץ הועלה בהצלחה". New merge-blocking gate:
+`e2e/documents-upload.spec.ts` (`npm run test:e2e`, @playwright/test) uploads
+a **1.2MB** PDF to **each of the 5 slots** and asserts every row flips to
+"ממתין לבדיקה", plus inline oversize/wrong-type rejections. Verified live on
+the redeployed preview (ido-new-project-jb51x1wpz): 1.6MB upload → inline ✓ +
+"ממתין לבדיקה", no error page; demo data cleaned afterwards.
