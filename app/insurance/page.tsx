@@ -1,8 +1,10 @@
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import InsuranceCompare from "@/components/InsuranceCompare";
+import LeadCaptureCard from "@/components/LeadCaptureCard";
 import { currentUser } from "@/lib/session";
 import { getActiveRequest } from "@/lib/requests";
+import { shekel } from "@/lib/format";
 
 // Insurance comparison — owner-approved (2026-07-06) to ship with the mockup's
 // demo factors, on the hard condition they are labeled estimated demo tariffs
@@ -27,6 +29,11 @@ export default async function InsurancePage() {
           <p className="mt-2 text-ink-2">חמש חברות, פרמיה ראשונה, ממוצעת וכוללת — והשוואה מול הפוליסה הקיימת שלכם.</p>
         </div>
         <InsuranceCompare defaultSum={defaultSum} />
+        <LeadCaptureCard
+          service="insurance"
+          context={`סכום ביטוח ${shekel(defaultSum)}`}
+          subtitle="רוצים הצעת מחיר אמיתית מהמבטחים? השאירו פרטים — יועץ ישווה עבורכם פוליסות ויחזור עם הצעה מחייבת."
+        />
       </main>
       <AppFooter />
     </>

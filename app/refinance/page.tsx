@@ -1,6 +1,7 @@
 import AppHeader from "@/components/AppHeader";
 import AppFooter from "@/components/AppFooter";
 import ClockCard from "@/components/ClockCard";
+import LeadCaptureCard from "@/components/LeadCaptureCard";
 import RefiTracksForm from "@/components/RefiTracksForm";
 import { toClockCardData } from "@/lib/clock-card-data";
 import { computeClocks, loadMarketParams } from "@/lib/engine-config";
@@ -126,10 +127,26 @@ export default async function RefinancePage({
             </div>
             <p className="mt-2 text-xs text-ink-3">חיסכון = סך התשלומים של המשכנתא הקיימת פחות סך התשלומים של התמהיל החלופי. חישוב במנוע מאומת; אינו מהווה ייעוץ משכנתאי.</p>
 
-            <h2 className="display mb-3 mt-9 text-2xl font-bold">פירוט התמהילים החלופיים</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-              {clocks.map((c, i) => (<ClockCard key={c.key} clock={toClockCardData(c)} rank={i + 1} recommended={c.recommended} showActions={false} />))}
-            </div>
+            {clocks.length === 0 ? (
+              <div className="card mt-9 rounded-2xl border-2 border-dashed border-rule-strong bg-paper-2/50 p-7 text-center">
+                <p className="mb-1 text-2xl">🔍</p>
+                <p className="font-bold">לא נמצאו תמהילים חלופיים בטווח ההחזר שהוגדר</p>
+                <p className="mt-1 text-sm text-ink-2">נסו להרחיב את טווח ההחזר החודשי — או השאירו פרטים ויועץ יבנה עבורכם תמהיל מותאם אישית.</p>
+              </div>
+            ) : (
+              <>
+                <h2 className="display mb-3 mt-9 text-2xl font-bold">פירוט התמהילים החלופיים</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                  {clocks.map((c, i) => (<ClockCard key={c.key} clock={toClockCardData(c)} rank={i + 1} recommended={c.recommended} showActions={false} />))}
+                </div>
+              </>
+            )}
+
+            <LeadCaptureCard
+              service="refinance"
+              context={`יתרה ${shekel(balance)} · ${goalLabel} · החזר רצוי ${shekel(min)}–${shekel(max)}`}
+              subtitle="רוצים לממש את המחזור? השאירו פרטים — יועץ ילווה אתכם מול הבנקים משלב ההצעה ועד החתימה."
+            />
           </>
         )}
       </main>

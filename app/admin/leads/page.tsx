@@ -6,12 +6,15 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { shekel } from "@/lib/format";
 import { assignAdvisor } from "../actions";
 
+const LEAD_SERVICE_LABEL: Record<string, string> = { refinance: "מחזור משכנתא", insurance: "ביטוח משכנתא" };
+
 export default async function LeadsPage() {
   await requireRole("admin");
   const db = await supabaseServer();
-  const [{ data: requests }, { data: advisors }] = await Promise.all([
+  const [{ data: requests }, { data: advisors }, { data: calcLeads }] = await Promise.all([
     db.from("requests").select("id, status, advisor_id, client:profiles!requests_client_id_fkey(full_name), request_details(loan_amount)").order("created_at", { ascending: false }),
     db.from("profiles").select("id, full_name").eq("role", "advisor"),
+    db.from("leads").select("id, service_type, full_name, phone, questionnaire, created_at").not("full_name", "is", null).order("created_at", { ascending: false }).limit(50),
   ]);
 
   const rows = (requests ?? []) as unknown as {
@@ -50,6 +53,30 @@ export default async function LeadsPage() {
             </tbody>
           </table>
         </div>
+
+        <h2 className="display mb-3 mt-10 text-2xl font-bold">פניות מהמחשבונים</h2>
+        {(calcLeads ?? []).length === 0 ? (
+          <div className="card rounded-2xl p-6 text-sm text-ink-3">אין פניות עדיין — פניות מדפי המחזור והביטוח יופיעו כאן.</div>
+        ) : (
+          <div className="card overflow-x-auto rounded-2xl p-2">
+            <table className="w-full min-w-[520px] text-sm">
+              <thead><tr className="lbl border-b border-rule text-right">
+                <th className="px-4 py-3">שם</th><th>טלפון</th><th>שירות</th><th>הקשר</th><th>התקבל</th>
+              </tr></thead>
+              <tbody>
+                {(calcLeads ?? []).map((l) => (
+                  <tr key={l.id} className="border-b border-rule last:border-0">
+                    <td className="px-4 py-3.5 font-bold">{l.full_name}</td>
+                    <td className="num" dir="ltr">{l.phone}</td>
+                    <td><span className="pill bg-paper-2 text-ink-2">{LEAD_SERVICE_LABEL[l.service_type] ?? l.service_type}</span></td>
+                    <td className="text-xs text-ink-3">{(l.questionnaire as { context?: string } | null)?.context ?? "—"}</td>
+                    <td className="num text-xs text-ink-3">{new Date(l.created_at).toLocaleDateString("he-IL")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </main>
       <AppFooter />
     </>
