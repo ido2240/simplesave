@@ -220,8 +220,12 @@ export default function NewMortgageForm({
         </div>
       </section>
 
-      <button disabled={pending} className="btn-primary press w-full py-3.5 text-base disabled:opacity-50">
-        {pending ? "מחשב…" : "חשב חמישה תמהילים ←"}
+      <button
+        disabled={pending || loanInfeasible}
+        title={loanInfeasible ? "ההחזר המינימלי של ההלוואה גבוה מכושר ההחזר — עדכנו את הנתונים לפי ההצעות למעלה." : undefined}
+        className="btn-primary press w-full py-3.5 text-base disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {loanInfeasible ? "לא ניתן לחשב תמהילים — עדכנו את הנתונים לפי ההצעות למעלה" : pending ? "מחשב…" : "חשב חמישה תמהילים ←"}
       </button>
     </form>
   );
