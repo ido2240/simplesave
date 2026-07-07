@@ -527,3 +527,16 @@ a **1.2MB** PDF to **each of the 5 slots** and asserts every row flips to
 "ממתין לבדיקה", plus inline oversize/wrong-type rejections. Verified live on
 the redeployed preview (ido-new-project-jb51x1wpz): 1.6MB upload → inline ✓ +
 "ממתין לבדיקה", no error page; demo data cleaned afterwards.
+
+### Preview smoke-test round 3 — calculators become funnels
+Flow audit found (1) anonymous /refinance silently rendered zero alternatives
+(0009 gave `anon` no table privileges → engine read empty config) and (2) both
+calculators dead-ended with no CTA. Migration 0012: anon SELECT on
+economic_params + clock_templates (kept public rather than login-gating — the
+calculators are the lead magnets), leads contact columns + write-only anon
+INSERT. New LeadCaptureCard ("המשך עם יועץ") on /refinance + /insurance writes
+into public.leads; /admin/leads shows "פניות מהמחשבונים"; refi gets a
+defensive empty-state message. e2e/calculators.spec.ts gates it all (7/7 with
+the documents gate). Verified live on preview ido-new-project-n2xqbtz5s
+(anonymous: 6 comparison rows, lead submits succeed); 0012 applied to local +
+production; test leads cleaned from both.
