@@ -37,3 +37,7 @@ next-env.d.ts
 *.tsbuildinfo
 .DS_Store
 .vercel
+
+# playwright
+/test-results/
+/playwright-report/

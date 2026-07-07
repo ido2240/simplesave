@@ -2,6 +2,8 @@
 
 // Global error boundary — failed server actions and render errors land here
 // with a Hebrew recovery path instead of a blank crash.
+import Link from "next/link";
+
 export default function GlobalError({
   error,
   reset,
@@ -20,7 +22,7 @@ export default function GlobalError({
       <p className="mb-6 max-w-md text-ink-2">{message}</p>
       <div className="flex gap-3">
         <button onClick={reset} className="btn-primary press px-6 py-3">נסו שוב</button>
-        <a href="/" className="btn-ghost press px-6 py-3">לעמוד הבית</a>
+        <Link href="/" className="btn-ghost press px-6 py-3">לעמוד הבית</Link>
       </div>
       {error?.digest && <p className="num mt-6 text-xs text-ink-3">קוד שגיאה: {error.digest}</p>}
     </main>
