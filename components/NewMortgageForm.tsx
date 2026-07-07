@@ -86,6 +86,16 @@ export default function NewMortgageForm({
   const loanInfeasible = minRequiredPay > capacity + 0.01;
   const maxPayBelowFloor = !loanInfeasible && minRequiredPay > 0 && maxPay < minRequiredPay - 0.01;
 
+  // Concrete ways out of an infeasible loan, from the same math inverted:
+  // the loan the current capacity CAN carry over the full spread, the equity
+  // that shrinks the loan to it, and the income that lifts capacity to the floor.
+  const up100 = (n: number) => Math.ceil(n / 100) * 100;
+  const monthlyR = fixedRate / 12;
+  const affordableLoan = capacity > 0 ? (capacity * (1 - Math.pow(1 + monthlyR, -MAX_TERM_YEARS * 12))) / monthlyR : 0;
+  const equityNeeded = up100(Math.max(0, propertyValue - affordableLoan));
+  const incomeNeeded = up100(Math.max(0, minRequiredPay / paymentRatio + fixedExpenses - additionalIncome));
+  const extraIncomeNeeded = up100(Math.max(0, (minRequiredPay - capacity) / paymentRatio));
+
   const setRow = (i: number, patch: Partial<BorrowerSeed>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   const addRow = () => setRows((rs) => (rs.length >= 5 ? rs : [...rs, { ...emptyBorrower, fullName: "" }]));
@@ -184,9 +194,22 @@ export default function NewMortgageForm({
             </>
           )}
           {loanInfeasible && (
-            <b className="mt-1 block">
-              גם בפריסה המלאה ההחזר המינימלי גבוה מכושר ההחזר — הגדילו הון עצמי, צרפו לווה נוסף או עדכנו את ההכנסות.
-            </b>
+            <span className="mt-2 block">
+              <b>ההחזר המינימלי גבוה מכושר ההחזר גם בפריסה הארוכה ביותר (30 שנה). כדי להמשיך, אחת מהאפשרויות:</b>
+              {affordableLoan > 0 && (
+                <span className="mt-1 block">
+                  · <b>להגדיל הון עצמי</b> לכ-<b className="num">{shekelFmt(equityNeeded)}</b>
+                  {" "}(עוד <b className="num">{shekelFmt(Math.max(0, equityNeeded - equity))}</b>) — כך ההלוואה תקטן לסכום שההכנסות מכסות.
+                </span>
+              )}
+              <span className="mt-1 block">
+                · <b>להגדיל את ההכנסה נטו הכוללת</b> לכ-<b className="num">{shekelFmt(incomeNeeded)}</b> בחודש.
+              </span>
+              <span className="mt-1 block">
+                · <b>לצרף לווה נוסף</b> (בכפתור &quot;+ הוסף לווה&quot; למעלה) עם הכנסה נטו של כ-<b className="num">{shekelFmt(extraIncomeNeeded)}</b> אם הוא בעל הנכס,
+                {" "}או כ-<b className="num">{shekelFmt(extraIncomeNeeded * 2)}</b> אם אינו בעל הנכס (הכנסתו נספרת ב-50%).
+              </span>
+            </span>
           )}
           {maxPayBelowFloor && (
             <b className="mt-1 block">
