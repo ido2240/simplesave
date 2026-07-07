@@ -540,3 +540,15 @@ defensive empty-state message. e2e/calculators.spec.ts gates it all (7/7 with
 the documents gate). Verified live on preview ido-new-project-n2xqbtz5s
 (anonymous: 6 comparison rows, lead submits succeed); 0012 applied to local +
 production; test leads cleaned from both.
+
+### Production smoke-test — signup failure root-caused + fixed
+Owner couldn't re-create an account: auth logs showed "500: Database error
+saving new user", postgres logs `duplicate key … profiles_email_key`. Deleting
+a user in the Auth dashboard leaves an orphaned profiles row (no FK to
+auth.users), and re-signup crashed inside handle_new_user. Migration 0013:
+the trigger now reclaims same-email orphans + one-time cleanup (applied local
++ prod; freed ido2240@/ido6473@gmail.com). Register UX: live password-length
+and match/mismatch hints (incl. "אין דרישה לאות גדולה" — the opaque error had
+users guessing at rules that don't exist), prominent error box with login
+link for duplicate accounts, specific server messages. e2e/register.spec.ts
+gates it (10/10 suite). Deployed: ido-new-project-8sghms78k.
