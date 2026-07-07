@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from "react";
 import { saveNewMortgage } from "@/app/new-mortgage/actions";
+import { pmt } from "@/lib/engine";
 import {
   TARGET_PRICE_MIN_EQUITY,
   computeLoanAmountNew,
@@ -40,10 +41,13 @@ export default function NewMortgageForm({
   defaults,
   borrowers,
   paymentRatio,
+  fixedRate,
 }: {
   defaults: FormDefaults;
   borrowers: BorrowerSeed[];
   paymentRatio: number;
+  /** Live fixed-rate anchor — used for the minimum-payment floor hint. */
+  fixedRate: number;
 }) {
   const [state, formAction, pending] = useActionState(saveNewMortgage, undefined);
   const [rows, setRows] = useState<BorrowerSeed[]>(borrowers.length ? borrowers : [{ ...emptyBorrower }]);
@@ -73,6 +77,14 @@ export default function NewMortgageForm({
   const countingIncome = rows.reduce((s, r) => s + (r.isOwner ? r.netIncome : r.netIncome * 0.5), 0);
   const capacity = Math.max(0, (countingIncome + additionalIncome - fixedExpenses) * paymentRatio);
   const overCapacity = maxPay > capacity + 0.01;
+
+  // Payment floor for this loan: full 30-year spread at the live fixed anchor.
+  // Tells the user the minimum monthly payment the requested amount requires —
+  // and whether the loan is feasible at all given their capacity.
+  const MAX_TERM_YEARS = 30;
+  const minRequiredPay = estLoan > 0 ? -pmt(fixedRate / 12, MAX_TERM_YEARS * 12, estLoan) : 0; // pmt is sign-negative (Excel convention)
+  const loanInfeasible = minRequiredPay > capacity + 0.01;
+  const maxPayBelowFloor = !loanInfeasible && minRequiredPay > 0 && maxPay < minRequiredPay - 0.01;
 
   const setRow = (i: number, patch: Partial<BorrowerSeed>) =>
     setRows((rs) => rs.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -162,10 +174,26 @@ export default function NewMortgageForm({
           <input name="minPay" type="number" defaultValue={defaults.minPay} className={field} /></label>
         <label className="block"><span className="lbl mb-1 block">עד- (₪)</span>
           <input name="maxPay" type="number" value={maxPay} onChange={(e) => setMaxPay(Number(e.target.value) || 0)} className={field} /></label>
-        <div className={`sm:col-span-2 rounded-xl px-4 py-3 text-sm ${overCapacity ? "bg-[#fceeec] text-risk-high" : "bg-paper-2 text-ink-2"}`}>
+        <div className={`sm:col-span-2 rounded-xl px-4 py-3 text-sm ${overCapacity || loanInfeasible || maxPayBelowFloor ? "bg-[#fceeec] text-risk-high" : "bg-paper-2 text-ink-2"}`}>
           כושר החזר משוער לפי ההכנסות: <b className="num">{shekelFmt(capacity)}</b> בחודש
           ({Math.round(paymentRatio * 100)}% מההכנסה נטו).
-          {overCapacity && <> ההחזר המקסימלי שבחרתם גבוה מכושר ההחזר — הקטינו את ההחזר הרצוי או עדכנו את ההכנסות.</>}
+          {minRequiredPay > 0 && (
+            <>
+              {" "}ההחזר החודשי המינימלי למשכנתא בסך <b className="num">{shekelFmt(estLoan)}</b>:{" "}
+              כ-<b className="num">{shekelFmt(minRequiredPay)}</b> (פריסה מלאה ל-{MAX_TERM_YEARS} שנה בריבית קבועה).
+            </>
+          )}
+          {loanInfeasible && (
+            <b className="mt-1 block">
+              גם בפריסה המלאה ההחזר המינימלי גבוה מכושר ההחזר — הגדילו הון עצמי, צרפו לווה נוסף או עדכנו את ההכנסות.
+            </b>
+          )}
+          {maxPayBelowFloor && (
+            <b className="mt-1 block">
+              ההחזר המקסימלי שבחרתם נמוך מההחזר המינימלי הנדרש — העלו את &quot;עד&quot; לפחות ל-{shekelFmt(minRequiredPay)}.
+            </b>
+          )}
+          {overCapacity && !loanInfeasible && <b className="mt-1 block">ההחזר המקסימלי שבחרתם גבוה מכושר ההחזר — הקטינו את ההחזר הרצוי או עדכנו את ההכנסות.</b>}
         </div>
       </section>
 

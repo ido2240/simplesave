@@ -4,6 +4,7 @@ import NewMortgageForm, { type BorrowerSeed, type FormDefaults } from "@/compone
 import { requireRole } from "@/lib/session";
 import { DEFAULT_PAYMENT_TO_INCOME_RATIO } from "@/lib/engine";
 import { getActiveRequest } from "@/lib/requests";
+import { loadRateAnchors } from "@/lib/engine-config";
 import { supabaseServer } from "@/lib/supabase-server";
 
 export default async function NewMortgagePage() {
@@ -49,6 +50,7 @@ export default async function NewMortgagePage() {
   };
 
   const paymentRatio = Number(process.env.PAYMENT_TO_INCOME_RATIO || DEFAULT_PAYMENT_TO_INCOME_RATIO);
+  const anchors = await loadRateAnchors();
 
   return (
     <>
@@ -59,7 +61,7 @@ export default async function NewMortgagePage() {
           <h1 className="display mt-2 text-4xl font-bold">בואו נמצא את התמהיל המושלם</h1>
           <p className="mt-2 text-ink-2">מלאו את הפרטים ונחשב עבורכם חמישה תמהילים מותאמים אישית.</p>
         </div>
-        <NewMortgageForm defaults={defaults} borrowers={borrowers} paymentRatio={paymentRatio} />
+        <NewMortgageForm defaults={defaults} borrowers={borrowers} paymentRatio={paymentRatio} fixedRate={anchors.fixed} />
       </main>
       <AppFooter />
     </>
