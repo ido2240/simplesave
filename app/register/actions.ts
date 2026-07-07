@@ -13,8 +13,9 @@ export async function registerUser(_prev: string | undefined, formData: FormData
   const consent = formData.get("consent") === "on";
 
   if (!fullName || !email || !password) return "יש למלא שם, אימייל וסיסמה.";
-  if (password.length < 8) return "הסיסמה חייבת לכלול לפחות 8 תווים.";
-  if (password !== confirm) return "הסיסמאות אינן תואמות.";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) return "כתובת האימייל אינה תקינה.";
+  if (password.length < 8) return "הסיסמה קצרה מדי — נדרשים לפחות 8 תווים.";
+  if (password !== confirm) return "הסיסמאות אינן תואמות — יש להקליד את אותה סיסמה בשני השדות.";
   if (!consent) return "יש לאשר את תנאי השימוש ומדיניות הפרטיות.";
   if (!(await rateLimitOk({ name: "register", limit: 5, windowMs: 60_000 }))) return RATE_LIMIT_MESSAGE;
 
@@ -25,7 +26,11 @@ export async function registerUser(_prev: string | undefined, formData: FormData
     options: { data: { full_name: fullName, role: "client" } },
   });
   if (error) {
-    if (error.message.toLowerCase().includes("already")) return "כבר קיים משתמש עם האימייל הזה.";
+    const msg = error.message.toLowerCase();
+    if (msg.includes("already")) return "כבר קיים חשבון עם האימייל הזה — נסו להתחבר.";
+    if (msg.includes("password")) return "הסיסמה אינה עומדת בדרישות — נדרשים לפחות 8 תווים.";
+    if (msg.includes("email")) return "כתובת האימייל אינה תקינה.";
+    if (msg.includes("database error")) return "לא ניתן להשלים את ההרשמה עם אימייל זה — נסו להתחבר, או פנו אלינו.";
     return "ההרשמה נכשלה. נסו שוב.";
   }
 

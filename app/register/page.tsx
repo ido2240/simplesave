@@ -1,13 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { registerUser } from "./actions";
 
 const inputCls = "w-full rounded-xl border border-rule-strong bg-paper px-4 py-3 outline-none focus:border-primary";
 
 export default function RegisterPage() {
   const [error, formAction, pending] = useActionState(registerUser, undefined);
+  // Live hints while typing — the #1 signup complaint was an opaque failure
+  // with no clue whether the password was too short or mismatched.
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const longEnough = password.length >= 8;
+  const match = confirm.length > 0 && password === confirm;
+  const mismatch = confirm.length > 0 && password !== confirm;
 
   return (
     <main className="flex flex-1 items-center justify-center px-6 py-16">
@@ -36,12 +43,26 @@ export default function RegisterPage() {
             <input name="email" type="email" required dir="ltr" placeholder="you@example.com" className={`${inputCls} text-left`} />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">סיסמה (לפחות 8 תווים)</span>
-            <input name="password" type="password" required dir="ltr" minLength={8} className={`${inputCls} text-left`} />
+            <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">סיסמה</span>
+            <input
+              name="password" type="password" required dir="ltr" minLength={8}
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              className={`${inputCls} text-left`}
+            />
+            <span className={`mt-1 block text-xs font-semibold ${password.length === 0 ? "text-ink-3" : longEnough ? "text-risk-low" : "text-risk-high"}`}>
+              {password.length === 0 ? "לפחות 8 תווים — אין דרישה לאות גדולה או לתו מיוחד." : longEnough ? "✓ אורך הסיסמה תקין" : `✗ חסרים עוד ${8 - password.length} תווים (נדרשים לפחות 8)`}
+            </span>
           </label>
           <label className="block">
             <span className="mb-1.5 block text-[13px] font-semibold text-ink-2">אימות סיסמה</span>
-            <input name="confirm" type="password" required dir="ltr" className={`${inputCls} text-left`} />
+            <input
+              name="confirm" type="password" required dir="ltr"
+              value={confirm} onChange={(e) => setConfirm(e.target.value)}
+              className={`${inputCls} text-left ${mismatch ? "border-risk-high" : ""}`}
+              aria-invalid={mismatch}
+            />
+            {mismatch && <span className="mt-1 block text-xs font-semibold text-risk-high">✗ הסיסמאות אינן תואמות — יש להקליד את אותה סיסמה בשני השדות.</span>}
+            {match && <span className="mt-1 block text-xs font-semibold text-risk-low">✓ הסיסמאות תואמות</span>}
           </label>
           <label className="flex items-start gap-2.5 text-[13px] text-ink-2">
             <input type="checkbox" name="consent" required className="mt-0.5 accent-[var(--primary)]" />
@@ -50,7 +71,16 @@ export default function RegisterPage() {
               ול<Link href="/privacy" className="font-semibold text-primary hover:underline">מדיניות הפרטיות</Link>.
             </span>
           </label>
-          {error && <p className="text-sm text-risk-high">{error}</p>}
+          {error && (
+            <div role="alert" className="rounded-xl border border-[#f3c6c0] bg-[#fceeec] px-4 py-3 text-sm font-semibold text-risk-high">
+              {error}
+              {error.includes("כבר קיים") && (
+                <span className="mt-1 block font-normal">
+                  <Link href="/login" className="font-semibold text-primary hover:underline">למעבר לכניסה ←</Link>
+                </span>
+              )}
+            </div>
+          )}
           <button type="submit" disabled={pending} className="btn-primary press w-full py-3 disabled:opacity-50">
             {pending ? "נרשם…" : "צור חשבון"}
           </button>
