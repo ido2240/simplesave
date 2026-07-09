@@ -1,4 +1,4 @@
-// Weighted risk score — port of src/simplesave/engine/risk.py.
+// Weighted risk score for a mortgage mix.
 
 import { jsRound, num } from "./core";
 import { inferRouteKind, routeChangePeriod } from "./tuning";

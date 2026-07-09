@@ -22,7 +22,7 @@ definitive mockup has no competing age rule. Matches the existing
 **Chosen: option (b)** — a **display risk score (0–100) stored per clock
 template** (`clock_templates.display_risk`, manager-editable), labelled with
 the definitive mockup's thresholds (`<35 נמוך · <50 נמוך-בינוני · <65 בינוני ·
-<78 בינוני-גבוה · אחרת גבוה`). The ported risk engine stays untouched and its
+<78 בינוני-גבוה · אחרת גבוה`). The engine risk stays untouched and its
 score remains available internally; the speedometer shows the display score.
 Owner-approved 2026-07-06 together with the mockup template adoption (D-2).
 
@@ -50,9 +50,9 @@ approximations, not inputs. The clock4/clock5 duplication quirk is gone
 (`duplicate_of` = null). Templates remain manager-editable data.
 
 Earlier (2026-06-26) resolution — superseded:
-Per the project owner's directive, the five clocks now use the **reference simulator
-templates verbatim** — including the reference quirk that clock4 == clock1 and
-clock5 ≈ clock3. They are kept as defaults but **flagged** (`duplicate_of` /
+Per the project owner's directive, the five clocks now use the **engine's built-in
+templates verbatim** — including the quirk that clock4 == clock1 and
+clock5 ≈ clock3 by default. They are kept as defaults but **flagged** (`duplicate_of` /
 `CLOCK_DUPLICATE_FLAGS`) so the admin UI marks them and the manager can replace them
 after client sign-off. (Supersedes the earlier "distinct seeds" resolution below.)
 

@@ -12,8 +12,8 @@ documents, messages an advisor, and tracks the process — across three roles
 
 **Live:** https://ido-new-project.vercel.app
 
-The calculation engine is a faithful TypeScript port of a validated spreadsheet/HTML
-mortgage simulator, locked behind a parity gate so the math cannot silently regress.
+The calculation engine is locked behind a parity gate — a frozen 140-case golden
+battery — so the math cannot silently regress.
 
 ---
 
@@ -71,8 +71,8 @@ Pure functions, no React / Supabase / I/O. Layers:
 
 ### Parity gate
 
-`lib/engine/__tests__/parity.test.ts` runs the same battery the source engine was
-validated on and compares every number to a frozen `golden.json`:
+`lib/engine/__tests__/parity.test.ts` runs the full validation battery and
+compares every number to a frozen `golden.json`:
 
 ```
 140 cases (route / mix / risk / tune) · 167,099 numbers compared
@@ -109,7 +109,7 @@ lib/
 supabase/
   migrations/         # 0001–0007 (schema, auth, anchors, storage, RLS)
   seed.ts             # demo users + params + 5 clocks + a demo request
-reference/            # source simulator (parity oracle)
+reference/            # reference material used to validate the engine (parity oracle)
 ```
 
 ---

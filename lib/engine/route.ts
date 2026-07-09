@@ -1,4 +1,4 @@
-// Single-route amortization schedule — port of src/simplesave/engine/route.py.
+// Single-route amortization schedule.
 // Spitzer / equal-principal boards, monthly index linkage (annual/12), balloon &
 // grace, housing/any-purpose split. Pure function.
 

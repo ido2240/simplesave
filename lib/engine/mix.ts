@@ -1,4 +1,4 @@
-// Mix aggregation — port of src/simplesave/engine/mix.py.
+// Mix aggregation — combine several routes into one mortgage mix.
 
 import { num } from "./core";
 import { calcRoute } from "./route";

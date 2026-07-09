@@ -1,5 +1,4 @@
-// zod request schemas for the headless API (the TypeScript analogue of the
-// Pydantic models in the Python api/schemas.py).
+// zod request schemas for the headless API — validate and shape incoming JSON.
 import { z } from "zod";
 import { blankRoute, type Route } from "./engine";
 

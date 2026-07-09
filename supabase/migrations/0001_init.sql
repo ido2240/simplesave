@@ -1,5 +1,5 @@
 -- SimpleSave (Next.js) — initial schema.
--- Dedicated SimpleSave project; replaces the earlier Python-era tables.
+-- Dedicated SimpleSave project.
 -- DB access is server-only via the anon key + mock cookie auth (demo); RLS is
 -- left disabled on app tables for the demo. Production hardening = Supabase Auth
 -- (GoTrue) + RLS policies keyed to auth.uid().
@@ -15,7 +15,7 @@ drop table if exists public.profiles cascade;
 drop table if exists public.clock_templates cascade;
 drop table if exists public.rate_bands cascade;
 drop table if exists public.economic_params cascade;
--- legacy Python-era tables
+-- drop any pre-existing legacy tables
 drop table if exists public.applications cascade;
 drop table if exists public.clock_template_configs cascade;
 drop table if exists public.users cascade;

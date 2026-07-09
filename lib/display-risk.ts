@@ -1,7 +1,7 @@
 // Display-risk layer (D-6, resolved 2026-07-06): each clock template carries a
-// manager-editable 0-100 display score, labelled with the definitive mockup's
-// thresholds. The ported engine risk stays untouched and available internally;
-// this module only translates scores to user-facing labels/colors.
+// manager-editable 0-100 display score, labelled with fixed thresholds. The
+// engine risk stays untouched and available internally; this module only
+// translates scores to user-facing labels/colors.
 import type { RiskResult } from "@/lib/engine";
 
 /** Mockup riskLabel(): <35 low, <50 low-mid, <65 mid, <78 mid-high, else high. */

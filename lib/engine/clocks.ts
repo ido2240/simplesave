@@ -1,7 +1,8 @@
-// Five-clock templates + generation — port of src/simplesave/engine/clocks.py.
-// Templates are the validated simulator's clock1–clock5 verbatim (CLAUDE §4):
-// clock4 == clock1 and clock5 ≈ clock3 (reference quirk) — kept as defaults but
-// flagged via CLOCK_DUPLICATE_FLAGS so the manager UI can mark/replace them.
+// Five-clock templates + generation. The default clock1–clock5 templates are the
+// engine's built-in fallback mixes (CLAUDE §4): by default clock4 == clock1 and
+// clock5 ≈ clock3 — kept as defaults but flagged via CLOCK_DUPLICATE_FLAGS so the
+// manager UI can mark/replace them. In the running app the five clocks come from
+// the DB-stored (manager-editable) templates.
 
 import { num } from "./core";
 import { calcMix } from "./mix";
@@ -48,14 +49,14 @@ const prime = (share: number): RouteSpec => ({
   anchorType: "פריים", anchor: 0.0456, margin: 0,
 });
 
-// Reference simulator templates, verbatim (simulator lines ~1369–1426).
+// Built-in fallback templates for the five clocks.
 export const CLOCK_ROUTE_SPECS: Record<string, RouteSpec[]> = {
   clock1: [fixed(17, false), fixed(17, true), variable(30, 36, false), variable(15, 60, true), prime(21)],
   clock2: [fixed(33, false), variable(30, 36, false), prime(37)],
   clock3: [fixed(35, false), prime(65)],
-  // clock4: EXACT DUPLICATE of clock1 (reference quirk — flagged, not silently shipped)
+  // clock4: EXACT DUPLICATE of clock1 by default — flagged, not silently shipped
   clock4: [fixed(17, false), fixed(17, true), variable(30, 36, false), variable(15, 60, true), prime(21)],
-  // clock5: near-duplicate of clock3 (reference quirk — flagged)
+  // clock5: near-duplicate of clock3 by default — flagged
   clock5: [fixed(33, false), prime(67)],
 };
 

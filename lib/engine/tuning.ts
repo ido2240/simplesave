@@ -1,5 +1,5 @@
-// Route normalization, allowed periods, and the mix-to-range tuner —
-// port of src/simplesave/engine/tuning.py. The tuner produces the clocks.
+// Route normalization, allowed periods, and the mix-to-range tuner.
+// The tuner produces the clocks.
 
 import { jsRound, num } from "./core";
 import { calcMix } from "./mix";

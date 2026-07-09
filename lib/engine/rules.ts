@@ -1,5 +1,5 @@
-// Regulatory validations — port of src/simplesave/engine/validation.py.
-// Provisional ceilings from DECISIONS.md (DTI 38%, age 85 new / 80 refinance).
+// Regulatory validations: LTV / equity / DTI / age (new-mortgage + refinance).
+// Ceilings from DECISIONS.md (DTI 40%, age 85 new / 80 refinance).
 
 export type LoanType = "single_property" | "additional_property" | "all_purpose" | "improvement";
 export type PropertySource = "contractor" | "second_hand" | "target_price" | "self_build";

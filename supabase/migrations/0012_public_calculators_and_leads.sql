@@ -14,7 +14,7 @@ create policy clock_templates_public_read on public.clock_templates
   for select to anon using (true);
 
 -- (b) Contact leads from the calculators ("המשך עם יועץ"). The leads table
---     (unused since the Python port) gains contact columns; anyone may INSERT
+--     (previously unused) gains contact columns; anyone may INSERT
 --     a lead, but it stays write-only for anon — reading remains staff-only
 --     via the existing leads_staff policy.
 alter table public.leads

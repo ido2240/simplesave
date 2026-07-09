@@ -1,4 +1,4 @@
-// Core numeric primitives — port of src/simplesave/engine/core.py.
+// Core numeric primitives for the calculation engine.
 
 import type { MarketParams, Route } from "./types";
 
@@ -10,8 +10,8 @@ export function num(v: unknown): number {
 }
 
 /**
- * JS Math.round semantics (round half toward +∞). The Python port used
- * floor(x+0.5) precisely to match this; on the JS runtime it is native.
+ * JS Math.round semantics (round half toward +∞). The engine's canonical
+ * rounding for money figures.
  */
 export function jsRound(x: number): number {
   return Math.round(x);

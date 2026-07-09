@@ -1,6 +1,5 @@
-// Engine data model — a faithful port of src/simplesave/engine/types.py.
-// Enum *values* are the exact Hebrew literals from the reference simulator, so
-// the data is byte-identical and the risk table still matches.
+// Engine data model. Enum *values* are the exact Hebrew literals used across the
+// app and the risk table, so the data stays consistent everywhere it flows.
 
 export type Board = "שפיצר" | "קרן שווה"; // Spitzer (level payment) | equal principal
 export type Balloon = "" | "בלון מלא" | "בלון חלקי" | "גרייס מלא" | "גרייס חלקי";
@@ -20,7 +19,7 @@ export interface MarketParams {
   eur: number; // expected annual EUR rate
 }
 
-/** A single mortgage track. Defaults mirror the reference blankRoute. */
+/** A single mortgage track. Defaults come from blankRoute below. */
 export interface Route {
   amount: number;
   years: number;
@@ -121,7 +120,7 @@ export interface TuneResult {
   shortened: ShortenInfo[];
 }
 
-/** Factory mirroring the reference blankRoute / Route dataclass defaults. */
+/** Factory for a Route with sensible defaults. */
 export function blankRoute(partial: Partial<Route> = {}): Route {
   return {
     amount: 0,

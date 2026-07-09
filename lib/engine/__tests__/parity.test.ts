@@ -1,6 +1,6 @@
-// Parity gate (Phase 2): the TypeScript engine must return the same numbers as
-// the Python engine. Loads golden.json (dumped from the Python battery via
-// scripts/dump_golden.py) and runs the identical cases through the TS engine.
+// Parity gate: the engine must reproduce the frozen golden battery exactly.
+// Loads golden.json (the validated reference outputs) and runs the identical
+// cases through the engine, comparing every number.
 
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
@@ -126,13 +126,13 @@ function assertClose(path: string, a: unknown, b: unknown): void {
   }
 }
 
-describe("engine parity (TS vs Python golden battery)", () => {
+describe("engine parity (vs frozen golden battery)", () => {
   it("battery is substantial (140 cases across route/mix/risk/tune)", () => {
     expect(data.cases.length).toBe(140);
     expect(new Set(data.cases.map((c) => c.type))).toEqual(new Set(["route", "mix", "risk", "tune"]));
   });
 
-  it("every case matches the Python golden output", () => {
+  it("every case matches the golden output", () => {
     data.cases.forEach((c, i) => {
       assertClose(`case[${i}](${c.type})`, runCase(c), data.golden[i]);
     });
